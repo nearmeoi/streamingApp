@@ -1,0 +1,80 @@
+---
+import Button from "../ui/Button.astro";
+
+const navItems = [
+  { label: "Home", href: "/" },
+  { label: "Genres", href: "/genres" },
+  { label: "Schedule", href: "/schedule" },
+  { label: "Search", href: "/search" },
+  { label: "My List", href: "/mylist" },
+];
+
+const isHome = Astro.url.pathname === "/";
+---
+
+<header
+  class={`sticky top-0 z-50 w-full transition-all duration-300 border-b border-white/5 ${isHome ? "bg-base/80 backdrop-blur-md md:bg-transparent md:backdrop-blur-none md:border-none" : "bg-base/80 backdrop-blur-md"}`}
+>
+  <div class="container mx-auto flex h-16 items-center justify-between px-4">
+    <div class="flex items-center gap-8">
+      <!-- Logo -->
+      <a href="/" class="block hover:opacity-80 transition-opacity">
+        <img
+          src="/logo_typhography.png"
+          alt="HuaStream"
+          class="h-10 w-auto object-contain"
+        />
+      </a>
+
+      <!-- Desktop Nav -->
+      <nav class="hidden md:flex items-center gap-6">
+        {
+          navItems.map((item) => (
+            <a
+              href={item.href}
+              class="text-sm font-medium text-gray-300 hover:text-white transition-colors"
+            >
+              {item.label}
+            </a>
+          ))
+        }
+      </nav>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-2">
+      <Button variant="icon" href="/search" aria-label="Search">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"
+          ></path></svg
+        >
+      </Button>
+      <a href="/profile" class="hidden md:block">
+        <img
+          src="https://placehold.co/100x100/e50914/FFF?text=U"
+          alt="Profile"
+          class="w-8 h-8 rounded-full border border-highlight"
+        />
+      </a>
+      <!-- Mobile Menu Toggle (UI only for now) -->
+      <div class="md:hidden">
+        <Button variant="icon" href="/profile" aria-label="Profile">
+          <img
+            src="https://placehold.co/100x100/e50914/FFF?text=U"
+            alt="Profile"
+            class="w-6 h-6 rounded-full"
+          />
+        </Button>
+      </div>
+    </div>
+  </div>
+</header>

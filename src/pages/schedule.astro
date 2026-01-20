@@ -1,0 +1,113 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { getSchedule } from '../lib/api';
+
+const scheduleData = await getSchedule();
+const schedule = scheduleData?.schedule || [];
+
+// Get current day
+const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const today = days[new Date().getDay()];
+---
+
+<MainLayout title="Schedule - HuaStream">
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Release Schedule</h1>
+    
+    <!-- Day Tabs -->
+    <div class="flex overflow-x-auto gap-2 pb-4 no-scrollbar mb-6 sticky top-16 bg-base z-40 py-2">
+      {schedule.map((dayData) => (
+        <button 
+          data-day={dayData.day}
+          class={`day-tab px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${dayData.day === today ? 'bg-accent text-white' : 'bg-surface text-secondary hover:bg-highlight border border-highlight'}`}
+        >
+          {dayData.day}
+          <span class="ml-1 text-xs opacity-70">({dayData.donghua_list.length})</span>
+        </button>
+      ))}
+    </div>
+
+    <!-- Schedule Content -->
+    <div id="schedule-content">
+      {schedule.map((dayData) => (
+        <div 
+          data-day-content={dayData.day} 
+          class={`day-content ${dayData.day === today ? '' : 'hidden'}`}
+        >
+          <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+            {dayData.day}
+            {dayData.day === today && <span class="px-2 py-0.5 bg-accent text-white text-xs rounded">Today</span>}
+          </h2>
+          
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {dayData.donghua_list.map((item) => (
+              <a href={`/detail/${item.slug}`} class="group flex flex-col gap-2">
+                <div class="relative aspect-poster w-full overflow-hidden rounded-lg bg-highlight shadow-sm transition-transform duration-300 group-hover:scale-105">
+                  <img src={item.poster} alt={item.title} class="h-full w-full object-cover" loading="lazy" />
+                  
+                  <!-- Episode Badge -->
+                  <div class="absolute top-2 left-2 flex gap-1">
+                    <span class="px-1.5 py-0.5 bg-accent text-[10px] font-bold text-white rounded">EP {item.episode}</span>
+                  </div>
+                  
+                  <!-- Release Time -->
+                  {item.release_time && (
+                    <div class="absolute bottom-2 right-2">
+                      <span class="px-1.5 py-0.5 bg-black/70 text-[10px] text-white rounded backdrop-blur-sm">
+                        {item.release_time}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                
+                <div class="flex flex-col gap-0.5">
+                  <h3 class="truncate text-sm font-medium text-primary group-hover:text-accent transition-colors">
+                    {item.title}
+                  </h3>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</MainLayout>
+
+<script>
+  // Run on initial load and page transitions
+  function initScheduleTabs() {
+    const tabs = document.querySelectorAll('.day-tab');
+    const contents = document.querySelectorAll('.day-content');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        e.preventDefault();
+        const day = tab.getAttribute('data-day');
+        
+        // Update tabs
+        tabs.forEach(t => {
+          t.classList.remove('bg-accent', 'text-white');
+          t.classList.add('bg-surface', 'text-secondary', 'border', 'border-highlight');
+        });
+        tab.classList.add('bg-accent', 'text-white');
+        tab.classList.remove('bg-surface', 'text-secondary', 'border', 'border-highlight');
+        
+        // Update content
+        contents.forEach(c => {
+          if (c.getAttribute('data-day-content') === day) {
+            c.classList.remove('hidden');
+          } else {
+            c.classList.add('hidden');
+          }
+        });
+      });
+    });
+  }
+  
+  // Run immediately
+  initScheduleTabs();
+  
+  // Also run on Astro page transitions
+  document.addEventListener('astro:page-load', initScheduleTabs);
+</script>

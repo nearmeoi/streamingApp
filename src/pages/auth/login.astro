@@ -1,0 +1,43 @@
+---
+import AuthLayout from "../../layouts/AuthLayout.astro";
+import Input from "../../components/ui/Input.astro";
+import Button from "../../components/ui/Button.astro";
+---
+
+<AuthLayout title="Login - HuaStream">
+  <div class="bg-surface p-8 rounded-2xl shadow-xl border border-highlight">
+    <h1 class="text-2xl font-bold mb-6 text-center">Welcome Back</h1>
+    <form class="flex flex-col gap-4">
+      <Input
+        type="email"
+        label="Email Address"
+        placeholder="you@example.com"
+        required
+      />
+      <Input type="password" label="Password" placeholder="••••••••" required />
+
+      <div
+        class="flex items-center justify-between text-xs text-secondary mt-1"
+      >
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" class="accent-accent rounded" />
+          <span>Remember me</span>
+        </label>
+        <a href="#" class="hover:text-primary transition-colors"
+          >Forgot password?</a
+        >
+      </div>
+
+      <Button type="submit" variant="primary" fullWidth class="mt-4"
+        >Sign In</Button
+      >
+    </form>
+
+    <div class="mt-6 text-center text-sm text-secondary">
+      New to HuaStream? <a
+        href="/auth/register"
+        class="text-white font-medium hover:underline">Sign up now</a
+      >
+    </div>
+  </div>
+</AuthLayout>

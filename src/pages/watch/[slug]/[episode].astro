@@ -1,0 +1,140 @@
+---
+import MainLayout from "../../../layouts/MainLayout.astro";
+import VideoPlayer from "../../../components/media/VideoPlayer.astro";
+import MediaCard from "../../../components/media/MediaCard.astro";
+import { getEpisode, getDetail } from "../../../lib/api";
+
+const { slug, episode } = Astro.params;
+
+// 1. Fetch Series Detail to get context and episode list
+// The 'slug' here is the series slug (e.g. 'perfect-world')
+const detailData = await getDetail(slug || "");
+
+// 2. Find the target episode in the list
+// The new API uses specific slugs for episodes (e.g. 'perfect-world-episode-251...')
+// matching strictly by number might be tricky if titles vary, but let's try strict Number matching first.
+let targetEpisodeSlug = null;
+let currentEpNumber = parseInt(episode || "1");
+
+if (detailData && detailData.episodes_list) {
+   // Try to find by episode string parsing (e.g. "Perfect World Episode 251...")
+   const target = detailData.episodes_list.find((ep) => {
+      // Extract number from title or assume order?
+      // Let's rely on regex from the title "Episode X"
+      const match = ep.episode.match(/Episode\s+(\d+)/i);
+      return match && parseInt(match[1]) === currentEpNumber;
+   });
+
+   if (target) {
+      targetEpisodeSlug = target.slug;
+   } else {
+      // Fallback: if '1' is requested but not found (maybe starts at 0 or different naming), take the first one?
+      // Or handle "Latest" request?
+      if (detailData.episodes_list.length > 0) {
+         // Default to the first one if specific not found? Or maybe just fail safely.
+         // Let's try to assume array index if reversed? No, safe is to just pick one if we cant match.
+         // Actually, if we serve /watch/slug/1, we expect Ep 1.
+         // If not found, show error or fallback.
+      }
+   }
+}
+
+// 3. Fetch Episode Data using the found slug
+let videoData = null;
+if (targetEpisodeSlug) {
+   videoData = await getEpisode(targetEpisodeSlug);
+}
+
+// 4. Prepare Data for View
+const seriesTitle = detailData?.title || slug?.replace(/-/g, " ");
+const poster = detailData?.poster || "";
+// Extract simple episode list for navigation (just numbers)
+const episodeList =
+   detailData?.episodes_list
+      ?.map((ep) => {
+         const match = ep.episode.match(/Episode\s+(\d+)/i);
+         return match ? parseInt(match[1]) : 0;
+      })
+      .sort((a, b) => a - b) || [];
+
+// 5. Stream URL extraction
+// New API: streaming.main_url.url OR streaming.servers[].url
+let streamUrl = "";
+if (videoData && videoData.streaming) {
+   streamUrl =
+      videoData.streaming.main_url?.url ||
+      videoData.streaming.servers?.[0]?.url ||
+      "";
+}
+
+// Fallback if completely failed
+const fallbackStream = "https://files.vidstack.io/agent-327/hls/stream.m3u8";
+---
+
+<MainLayout title={`Watch ${seriesTitle} - Ep ${episode}`}>
+   <div class="container mx-auto px-0 md:px-4 pt-0 md:pt-4 pb-8 relative">
+      <!-- Back Button -->
+      <a
+         href="/"
+         class="absolute top-4 left-4 z-40 p-2 bg-black/50 backdrop-blur-md rounded-full text-white hover:bg-accent transition-colors md:hidden"
+      >
+         <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg
+         >
+      </a>
+
+      <!-- Player Container -->
+      <div class="w-full max-w-5xl mx-auto">
+         {/* Pass direct URL to player now */}
+         <VideoPlayer
+            poster={poster}
+            src={streamUrl || fallbackStream}
+            episodes={episodeList}
+         />
+
+         <div class="p-4 flex flex-col gap-4">
+            <h1 class="text-xl md:text-2xl font-bold capitalize">
+               {seriesTitle}
+               <span class="text-accent">Episode {episode}</span>
+            </h1>
+
+            <p class="text-secondary text-sm md:text-base">
+               {detailData?.synopsis?.substring(0, 300)}...
+            </p>
+
+            <!-- Episode Grid -->
+            <div
+               class="mt-4 p-4 bg-surface/50 rounded-xl border border-highlight"
+            >
+               <h3 class="font-bold text-lg mb-4">Episodes</h3>
+               <div
+                  class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 max-h-60 overflow-y-auto no-scrollbar"
+               >
+                  {
+                     episodeList.map((ep) => (
+                        <a
+                           href={`/watch/${slug}/${ep}`}
+                           class={`aspect-square flex items-center justify-center rounded-lg border transition-colors font-medium text-sm ${ep === currentEpNumber ? "bg-accent border-accent text-white" : "bg-surface border-highlight text-secondary hover:bg-highlight hover:text-primary"}`}
+                        >
+                           {ep}
+                        </a>
+                     ))
+                  }
+               </div>
+            </div>
+         </div>
+      </div>
+
+      {
+         /* More Like This (Not easily available in new API Detail response, omitting for now) */
+      }
+   </div>
+</MainLayout>

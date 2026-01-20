@@ -1,0 +1,242 @@
+---
+import "plyr/dist/plyr.css";
+
+interface Props {
+  poster?: string;
+  src?: string; // This can be a direct link, an iframe tag, or base64
+  episodes?: number[];
+}
+
+const { poster, src = "", episodes = [] } = Astro.props;
+
+// --- Helper: Process the source ---
+// New API returns direct URL, mostly iframe like https://anichin.stream/....
+// We just need to check if it's an iframe embed or a video link.
+let finalSrc = src;
+let isIframe = true; // Assume iframe for most streaming servers from this API
+
+if (src.endsWith(".m3u8") || src.endsWith(".mp4")) {
+  isIframe = false;
+}
+---
+
+<div
+  id="video-wrapper"
+  class="relative w-full aspect-video bg-black rounded-lg shadow-2xl overflow-hidden group"
+>
+  {
+    isIframe ? (
+      /* IFRAME MODE: For third-party players (anichin.stream, etc) */
+      <iframe
+        src={finalSrc}
+        class="w-full h-full border-none"
+        allow="autoplay; fullscreen; picture-in-picture"
+        allowfullscreen
+      />
+    ) : (
+      /* NATIVE PLAYER MODE: For direct .m3u8 or .mp4 links */
+      <video
+        key={finalSrc}
+        id="player"
+        class="w-full h-full"
+        controls
+        crossorigin
+        playsinline
+        poster={poster}
+      >
+        <source
+          src={
+            finalSrc || "https://files.vidstack.io/agent-327/hls/stream.m3u8"
+          }
+          type="application/x-mpegURL"
+        />
+      </video>
+    )
+  }
+
+  <!-- Overlay only for Native Player (Iframes have their own controls) -->
+  {
+    !isIframe && (
+      <div
+        id="custom-overlay"
+        class="absolute inset-0 z-20 flex items-center justify-center gap-6 md:gap-12 bg-black/40 transition-opacity duration-300 opacity-0 pointer-events-none"
+      >
+        <button
+          id="btn-prev"
+          class="p-3 bg-white/10 rounded-full text-white hover:bg-accent/80 active:scale-95 transition-all pointer-events-auto backdrop-blur-sm"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M11 17l-5-5 5-5v10zm7 0l-5-5 5-5v10z" />
+          </svg>
+        </button>
+
+        <button
+          id="btn-play-toggle"
+          class="p-5 bg-white/10 rounded-full text-white hover:bg-accent active:scale-95 transition-all pointer-events-auto backdrop-blur-sm"
+        >
+          <svg
+            id="icon-play"
+            xmlns="http://www.w3.org/2000/svg"
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          <svg
+            id="icon-pause"
+            class="hidden"
+            xmlns="http://www.w3.org/2000/svg"
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+          </svg>
+        </button>
+
+        <button
+          id="btn-next"
+          class="p-3 bg-white/10 rounded-full text-white hover:bg-accent/80 active:scale-95 transition-all pointer-events-auto backdrop-blur-sm"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M13 17l5-5-5-5v10zm-7 0l5-5-5-5v10z" />
+          </svg>
+        </button>
+      </div>
+    )
+  }
+</div>
+
+<script>
+  import Plyr from "plyr";
+  import Hls from "hls.js";
+
+  document.addEventListener("astro:page-load", () => {
+    const video = document.getElementById("player") as HTMLVideoElement;
+    if (!video) {
+      // If no video element, handle Drawer logic separately for Iframe mode
+      setupDrawerOnly();
+      return;
+    }
+
+    const source = video?.querySelector("source")?.getAttribute("src");
+    if (!source) return;
+
+    let player: Plyr;
+
+    // Initialize HLS/Plyr
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(source);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        player = new Plyr(video, {
+          controls: [
+            "play-large",
+            "play",
+            "progress",
+            "current-time",
+            "mute",
+            "volume",
+            "settings",
+            "fullscreen",
+          ],
+          settings: ["quality", "speed"],
+          hideControls: true,
+        });
+        setupCustomControls(player);
+      });
+    } else {
+      player = new Plyr(video);
+      setupCustomControls(player);
+    }
+
+    function setupCustomControls(plyrInstance: Plyr) {
+      const overlay = document.getElementById("custom-overlay");
+      const btnPlayToggle = document.getElementById("btn-play-toggle");
+      const iconPlay = document.getElementById("icon-play");
+      const iconPause = document.getElementById("icon-pause");
+      const wrapper = document.getElementById("video-wrapper");
+
+      let timeout: any;
+      const showUI = () => {
+        overlay?.classList.remove("opacity-0");
+        clearTimeout(timeout);
+      };
+      const hideUI = () => {
+        if (plyrInstance.playing) overlay?.classList.add("opacity-0");
+      };
+
+      const updateState = () => {
+        if (plyrInstance.paused) {
+          iconPlay?.classList.remove("hidden");
+          iconPause?.classList.add("hidden");
+          showUI();
+        } else {
+          iconPlay?.classList.add("hidden");
+          iconPause?.classList.remove("hidden");
+          timeout = setTimeout(hideUI, 2000);
+        }
+      };
+
+      plyrInstance.on("play", updateState);
+      plyrInstance.on("pause", updateState);
+      btnPlayToggle?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        plyrInstance.togglePlay();
+      });
+
+      wrapper?.addEventListener("click", (e) => {
+        if (e.target === overlay || e.target === wrapper) {
+          if (overlay?.classList.contains("opacity-0")) {
+            showUI();
+            if (plyrInstance.playing) timeout = setTimeout(hideUI, 2500);
+          } else {
+            hideUI();
+          }
+        }
+      });
+
+      setupDrawerOnly();
+    }
+
+    function setupDrawerOnly() {
+      const drawer = document.getElementById("episode-drawer");
+      const btnOpen = document.getElementById("btn-open-episodes");
+      const btnClose = document.getElementById("btn-close-episodes");
+
+      btnOpen?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        drawer?.classList.remove("translate-x-full");
+      });
+      btnClose?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        drawer?.classList.add("translate-x-full");
+      });
+    }
+  });
+</script>
+
+<style is:global>
+  :root {
+    --plyr-color-main: var(--color-accent);
+  }
+  .plyr--video {
+    border-radius: 0.5rem;
+  }
+</style>

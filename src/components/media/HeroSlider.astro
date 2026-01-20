@@ -1,0 +1,60 @@
+---
+import type { DonghuaItem } from "../../lib/api";
+import Button from "../ui/Button.astro";
+
+interface Props {
+  featured: DonghuaItem[];
+}
+
+const { featured } = Astro.props;
+---
+
+<div
+  class="relative w-full aspect-[4/5] md:aspect-[21/9] overflow-hidden group"
+>
+  <div
+    class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full h-full"
+  >
+    {
+      featured.map((item) => (
+        <div class="flex-shrink-0 w-full h-full snap-center relative">
+          <img
+            src={item.poster}
+            alt={item.title}
+            class="w-full h-full object-cover"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-base via-base/50 to-transparent" />
+          <div class="absolute inset-0 bg-gradient-to-r from-base via-transparent to-transparent opacity-80" />
+
+          <div class="absolute bottom-0 left-0 p-4 md:p-12 w-full md:w-2/3 flex flex-col gap-3 items-start">
+            <span class="px-2 py-1 bg-accent text-[10px] font-bold rounded uppercase tracking-wider text-white">
+              Trending
+            </span>
+            <h1 class="text-2xl md:text-6xl font-bold leading-tight line-clamp-2">
+              {item.title}
+            </h1>
+            <p class="text-secondary text-sm md:text-base line-clamp-2 md:line-clamp-3 max-w-xl">
+              Watch the latest episode {item.episode} of {item.title} now on
+              HuaStream. Experience the best donghua streaming quality.
+            </p>
+            <div class="flex gap-3 mt-2">
+              <Button
+                variant="primary"
+                href={`/watch/${item.slug.endsWith("/") ? item.slug.slice(0, -1) : item.slug}`}
+                class="px-4 py-2 text-sm md:px-8 md:py-4 md:text-lg"
+              >
+                Watch Now
+              </Button>
+              <Button
+                variant="secondary"
+                class="px-4 py-2 text-sm md:px-8 md:py-4 md:text-lg"
+              >
+                + My List
+              </Button>
+            </div>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</div>

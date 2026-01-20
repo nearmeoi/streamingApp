@@ -1,0 +1,53 @@
+---
+import Navbar from "../components/layout/Navbar.astro";
+import SplashScreen from "../components/ui/SplashScreen.astro";
+import AuthOverlay from "../components/ui/AuthOverlay.astro";
+import BottomNav from "../components/layout/BottomNav.astro";
+import "../styles/global.css";
+
+// ... (Props interface)
+
+const { title = "HuaStream" } = Astro.props;
+
+const isNoPaddingPage =
+  Astro.url.pathname.startsWith("/watch/") ||
+  Astro.url.pathname.startsWith("/detail/") ||
+  Astro.url.pathname.startsWith("/profile") ||
+  Astro.url.pathname.startsWith("/mylist");
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#0f0f0f" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>{title}</title>
+  </head>
+  <body
+    class={`bg-base text-primary antialiased ${isNoPaddingPage ? "" : "pb-20 md:pb-0"} selection:bg-accent selection:text-white font-roboto flex flex-col min-h-screen`}
+  >
+    <SplashScreen />
+    <AuthOverlay />
+    <Navbar />
+
+    <main class="flex-1 w-full relative">
+      <slot />
+    </main>
+
+    {
+      !Astro.url.pathname.startsWith("/watch/") &&
+        !Astro.url.pathname.startsWith("/detail/") && <BottomNav />
+    }
+  </body>
+</html>

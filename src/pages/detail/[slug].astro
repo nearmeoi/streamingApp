@@ -1,0 +1,333 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import { getDetail } from "../../lib/api";
+
+const { slug } = Astro.params;
+
+if (!slug) {
+    return Astro.redirect("/404");
+}
+
+const detailData = await getDetail(slug);
+
+if (!detailData) {
+    return Astro.redirect("/404");
+}
+
+// Sort episodes ascending (1, 2, 3...)
+const sortedEpisodes = (detailData.episodes_list || []).slice().sort((a, b) => {
+    const numA = parseInt(a.episode.match(/Episode\s+(\d+)/i)?.[1] || "999");
+    const numB = parseInt(b.episode.match(/Episode\s+(\d+)/i)?.[1] || "999");
+    return numA - numB;
+});
+
+const genres = detailData.genres || [];
+---
+
+<MainLayout title={`${detailData.title} - HuaStream`}>
+    <div class="container mx-auto px-4 py-8">
+        <!-- Hero Section with Poster -->
+        <div class="flex flex-col md:flex-row gap-6 mb-8">
+            <!-- Poster -->
+            <div class="flex-shrink-0 mx-auto md:mx-0">
+                <img
+                    src={detailData.poster}
+                    alt={detailData.title}
+                    class="w-48 md:w-56 rounded-xl shadow-2xl border border-highlight"
+                />
+            </div>
+
+            <!-- Info -->
+            <div
+                class="flex-1 flex flex-col justify-end text-center md:text-left"
+            >
+                <h1 class="text-2xl md:text-4xl font-bold mb-2">
+                    {detailData.title}
+                </h1>
+                {
+                    detailData.alter_title && (
+                        <p class="text-secondary text-sm mb-4">
+                            {detailData.alter_title}
+                        </p>
+                    )
+                }
+
+                <!-- Action Buttons (Moved Up) -->
+                <div
+                    class="flex flex-wrap gap-3 justify-center md:justify-start mb-6"
+                >
+                    {
+                        sortedEpisodes.length > 0 && (
+                            <a
+                                href={`/watch/${sortedEpisodes[0].slug}`}
+                                class="inline-flex items-center gap-2 px-4 py-2 text-sm md:px-6 md:py-3 md:text-base bg-accent text-white font-bold rounded-lg hover:bg-accent/80 transition-colors"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                >
+                                    <path d="M8 5v14l11-7z" />
+                                </svg>
+                                Watch
+                            </a>
+                        )
+                    }
+                    <button
+                        id="btn-mylist"
+                        data-slug={slug}
+                        data-title={detailData.title}
+                        data-poster={detailData.poster}
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm md:px-6 md:py-3 md:text-base bg-surface border border-highlight text-primary font-bold rounded-lg hover:bg-highlight transition-colors"
+                    >
+                        <svg
+                            id="icon-add"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><path
+                                d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
+                            ></path></svg
+                        >
+                        <svg
+                            id="icon-check"
+                            class="hidden"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><path
+                                d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
+                            ></path></svg
+                        >
+                        <span id="btn-text">My List</span>
+                    </button>
+                </div>
+
+                <!-- Info Badges -->
+                <div
+                    class="flex flex-wrap gap-2 mb-3 justify-center md:justify-start"
+                >
+                    <span
+                        class="px-3 py-1 bg-accent/20 text-accent text-xs font-bold rounded-full border border-accent/30"
+                        >{detailData.status}</span
+                    >
+                    {
+                        detailData.episodes_count && (
+                            <span class="px-3 py-1 bg-surface border border-highlight text-xs rounded-full text-secondary">
+                                {detailData.episodes_count}
+                            </span>
+                        )
+                    }
+                    {
+                        detailData.studio && (
+                            <span class="px-3 py-1 bg-surface border border-highlight text-xs rounded-full text-secondary">
+                                {detailData.studio}
+                            </span>
+                        )
+                    }
+                </div>
+
+                <!-- Genres -->
+                {
+                    genres.length > 0 && (
+                        <div class="flex flex-wrap gap-2 mb-4 justify-center md:justify-start">
+                            {genres.map((genre: any) => (
+                                <span class="px-2 py-0.5 text-xs bg-surface/50 border border-highlight rounded-full text-secondary">
+                                    {genre.name}
+                                </span>
+                            ))}
+                        </div>
+                    )
+                }
+
+                <script>
+                    const btn = document.getElementById("btn-mylist");
+                    const iconAdd = document.getElementById("icon-add");
+                    const iconCheck = document.getElementById("icon-check");
+                    const btnText = document.getElementById("btn-text");
+
+                    const MYLIST_KEY = "huastream_mylist";
+
+                    function getMyList() {
+                        const data = localStorage.getItem(MYLIST_KEY);
+                        return data ? JSON.parse(data) : [];
+                    }
+
+                    function isInMyList(slug: string) {
+                        return getMyList().some(
+                            (item: any) => item.slug === slug,
+                        );
+                    }
+
+                    function updateUI() {
+                        const slug = btn?.getAttribute("data-slug") || "";
+                        if (isInMyList(slug)) {
+                            iconAdd?.classList.add("hidden");
+                            iconCheck?.classList.remove("hidden");
+                            iconCheck?.classList.add("text-accent");
+                            btnText!.textContent = "In My List";
+                        } else {
+                            iconAdd?.classList.remove("hidden");
+                            iconCheck?.classList.add("hidden");
+                            btnText!.textContent = "My List";
+                        }
+                    }
+
+                    btn?.addEventListener("click", () => {
+                        const slug = btn.getAttribute("data-slug") || "";
+                        const title = btn.getAttribute("data-title") || "";
+                        const poster = btn.getAttribute("data-poster") || "";
+
+                        let list = getMyList();
+                        const exists = list.some(
+                            (item: any) => item.slug === slug,
+                        );
+
+                        if (exists) {
+                            list = list.filter(
+                                (item: any) => item.slug !== slug,
+                            );
+                        } else {
+                            list.push({
+                                slug,
+                                title,
+                                poster,
+                                addedAt: Date.now(),
+                            });
+                        }
+
+                        localStorage.setItem(MYLIST_KEY, JSON.stringify(list));
+                        updateUI();
+                    });
+
+                    // Init
+                    updateUI();
+                </script>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Synopsis -->
+                <div>
+                    <h2 class="text-xl font-bold mb-3">Synopsis</h2>
+                    <div id="synopsis-container">
+                        <p
+                            id="synopsis-text"
+                            class="text-secondary leading-relaxed text-sm line-clamp-3"
+                        >
+                            {detailData.synopsis}
+                        </p>
+                        <button
+                            id="synopsis-toggle"
+                            class="text-accent text-sm mt-2 hover:underline"
+                            >See more...</button
+                        >
+                    </div>
+                </div>
+
+                <script>
+                    const toggle = document.getElementById("synopsis-toggle");
+                    const text = document.getElementById("synopsis-text");
+                    let expanded = false;
+
+                    toggle?.addEventListener("click", () => {
+                        expanded = !expanded;
+                        if (expanded) {
+                            text?.classList.remove("line-clamp-3");
+                            toggle.textContent = "See less";
+                        } else {
+                            text?.classList.add("line-clamp-3");
+                            toggle.textContent = "See more...";
+                        }
+                    });
+                </script>
+
+                <!-- Information -->
+                <div class="p-4 bg-surface rounded-xl border border-highlight">
+                    <h3 class="font-bold mb-4">Information</h3>
+                    <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        {
+                            detailData.studio && (
+                                <div class="flex justify-between col-span-2 sm:col-span-1">
+                                    <dt class="text-secondary">Studio</dt>
+                                    <dd>{detailData.studio}</dd>
+                                </div>
+                            )
+                        }
+                        {
+                            detailData.network && (
+                                <div class="flex justify-between col-span-2 sm:col-span-1">
+                                    <dt class="text-secondary">Network</dt>
+                                    <dd>{detailData.network}</dd>
+                                </div>
+                            )
+                        }
+                        {
+                            detailData.duration && (
+                                <div class="flex justify-between col-span-2 sm:col-span-1">
+                                    <dt class="text-secondary">Duration</dt>
+                                    <dd>{detailData.duration}</dd>
+                                </div>
+                            )
+                        }
+                        {
+                            detailData.episodes_count && (
+                                <div class="flex justify-between col-span-2 sm:col-span-1">
+                                    <dt class="text-secondary">Episodes</dt>
+                                    <dd>{detailData.episodes_count}</dd>
+                                </div>
+                            )
+                        }
+                        <div
+                            class="flex justify-between col-span-2 sm:col-span-1"
+                        >
+                            <dt class="text-secondary">Status</dt>
+                            <dd class="text-accent">{detailData.status}</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <!-- Episodes -->
+                <div>
+                    <h2 class="text-xl font-bold mb-4">Episodes</h2>
+                    <div
+                        class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2"
+                    >
+                        {
+                            sortedEpisodes.map((ep) => {
+                                const epNum = parseInt(
+                                    ep.episode.match(/Episode\s+(\d+)/i)?.[1] ||
+                                        "0",
+                                );
+                                return (
+                                    <a
+                                        href={`/watch/${ep.slug}`}
+                                        class="aspect-square flex items-center justify-center rounded-lg border bg-surface border-highlight text-secondary hover:bg-accent hover:border-accent hover:text-white transition-colors font-medium text-sm"
+                                    >
+                                        {epNum}
+                                    </a>
+                                );
+                            })
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</MainLayout>

@@ -1,0 +1,23 @@
+{
+  "name": "hua-stream",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.5.2",
+    "@astrojs/vercel": "^9.0.4",
+    "@tailwindcss/vite": "^4.1.18",
+    "astro": "^5.16.11",
+    "hls.js": "^1.6.15",
+    "plyr": "^3.8.4",
+    "tailwindcss": "^4.1.18",
+    "vidstack": "^0.6.15",
+    "vite-plugin-pwa": "^1.2.0",
+    "workbox-window": "^7.4.0"
+  }
+}

@@ -1,0 +1,61 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import { getGenres, type GenreItem } from "../../lib/api";
+
+const genresData = await getGenres();
+const allGenres: GenreItem[] = genresData?.data || [];
+
+// Filter out duplicates and non-genre items (years, studios, seasons)
+const yearPattern = /^(20\d{2}|Spring|Summer|Winter|Fall)/;
+const genres = allGenres
+    .filter(
+        (g: GenreItem, index: number, self: GenreItem[]) =>
+            // Remove duplicates by slug
+            index === self.findIndex((t: GenreItem) => t.slug === g.slug) &&
+            // Remove year/season tags
+            !yearPattern.test(g.name),
+    )
+    .slice(0, 50); // Limit to main genres
+---
+
+<MainLayout title="Genres - HuaStream">
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex items-center gap-4 mb-8">
+            <a
+                href="/"
+                class="p-2 rounded-full hover:bg-highlight transition-colors"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    ><path d="m15 18-6-6 6-6"></path></svg
+                >
+            </a>
+            <h1 class="text-2xl font-bold">Browse by Genre</h1>
+        </div>
+
+        <div
+            class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
+        >
+            {
+                genres.map((genre) => (
+                    <a
+                        href={`/genres/${genre.slug}/1`}
+                        class="group p-4 bg-surface hover:bg-highlight rounded-xl border border-highlight text-center transition-all hover:scale-105 hover:border-accent/50"
+                    >
+                        <span class="text-sm font-medium text-primary group-hover:text-accent transition-colors">
+                            {genre.name}
+                        </span>
+                    </a>
+                ))
+            }
+        </div>
+    </div>
+</MainLayout>

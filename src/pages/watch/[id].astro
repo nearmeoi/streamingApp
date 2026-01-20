@@ -1,0 +1,249 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import VideoPlayer from "../../components/media/VideoPlayer.astro";
+import { getEpisode, getDetail, getHomeData } from "../../lib/api";
+
+const { id } = Astro.params;
+// 'id' is the episode slug, e.g. 'little-fairy-yao-episode-03-subtitle-indonesia'
+
+if (!id) {
+    return Astro.redirect("/404");
+}
+
+// Fetch Episode Data (includes episodes_list and donghua_details!)
+const videoData = await getEpisode(id);
+
+if (!videoData) {
+    return Astro.redirect("/404");
+}
+
+// Get series slug from episode data
+const seriesSlug =
+    videoData.donghua_details?.slug || videoData.navigation?.all_episodes?.slug;
+
+// Fetch Detail for synopsis and genres (extra API call but worth it for UX)
+const detailData = seriesSlug ? await getDetail(seriesSlug) : null;
+
+// Use data from both responses
+const seriesTitle =
+    detailData?.title || videoData.donghua_details?.title || videoData.episode;
+const poster = detailData?.poster || videoData.donghua_details?.poster || "";
+const synopsis = detailData?.synopsis || "";
+const genres = detailData?.genres || [];
+const studio = detailData?.studio || "";
+const status = detailData?.status || "";
+const episodesCount = detailData?.episodes_count || "";
+
+// Sort episodes ascending (1, 2, 3...)
+const detailEpisodes = (videoData.episodes_list || [])
+    .slice()
+    .sort((a: any, b: any) => {
+        const numA = parseInt(
+            a.episode.match(/Episode\s+(\d+)/i)?.[1] || "999",
+        );
+        const numB = parseInt(
+            b.episode.match(/Episode\s+(\d+)/i)?.[1] || "999",
+        );
+        return numA - numB;
+    });
+
+// Current episode number
+const currentEpNumber = parseInt(
+    videoData.episode.match(/Episode\s+(\d+)/i)?.[1] || "0",
+);
+
+// Stream URL - prioritize Premium (main_url)
+let streamUrl = "";
+if (videoData.streaming) {
+    streamUrl =
+        videoData.streaming.main_url?.url ||
+        videoData.streaming.servers?.[0]?.url ||
+        "";
+}
+const fallbackStream = "https://files.vidstack.io/agent-327/hls/stream.m3u8";
+
+// Fetch recommendations (using home data, filter out current series)
+const homeData = await getHomeData();
+const recommendations = (homeData?.latest_release || [])
+    .filter((item: any) => item.slug !== seriesSlug)
+    .slice(0, 6);
+---
+
+<MainLayout title={videoData.episode}>
+    <div class="container mx-auto px-0 md:px-4 pt-0 md:pt-4 pb-4 relative">
+        <!-- Back Button -->
+        <a
+            href="/"
+            class="absolute top-4 left-4 z-40 p-2 bg-black/50 backdrop-blur-md rounded-full text-white hover:bg-accent transition-colors md:hidden"
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg
+            >
+        </a>
+
+        <!-- Player Container -->
+        <div class="w-full max-w-5xl mx-auto">
+            <VideoPlayer
+                poster={poster}
+                src={streamUrl || fallbackStream}
+                episodes={detailEpisodes.map((ep: any) =>
+                    parseInt(ep.episode.match(/Episode\s+(\d+)/i)?.[1] || "0"),
+                )}
+            />
+
+            <div class="p-4 flex flex-col gap-4">
+                <h1 class="text-xl md:text-2xl font-bold capitalize">
+                    {seriesTitle}
+                    <span class="text-accent">Episode {currentEpNumber}</span>
+                </h1>
+
+                <!-- Info Row -->
+                <div class="flex flex-wrap gap-2 text-xs text-secondary">
+                    {
+                        status && (
+                            <span class="px-2 py-1 bg-accent/20 text-accent rounded">
+                                {status}
+                            </span>
+                        )
+                    }
+                    {
+                        episodesCount && (
+                            <span class="px-2 py-1 bg-highlight rounded">
+                                {episodesCount}
+                            </span>
+                        )
+                    }
+                    {
+                        studio && (
+                            <span class="px-2 py-1 bg-highlight rounded">
+                                Studio: {studio}
+                            </span>
+                        )
+                    }
+                </div>
+
+                <!-- Genres -->
+                {
+                    genres.length > 0 && (
+                        <div class="flex flex-wrap gap-2">
+                            {genres.map((genre: any) => (
+                                <span class="px-3 py-1 text-xs bg-surface border border-highlight rounded-full text-secondary hover:text-primary hover:border-accent transition-colors">
+                                    {genre.name}
+                                </span>
+                            ))}
+                        </div>
+                    )
+                }
+
+                <!-- Synopsis -->
+                {
+                    synopsis && (
+                        <div class="mt-2">
+                            <h3 class="font-bold text-sm mb-2 text-secondary">
+                                Synopsis
+                            </h3>
+                            <div id="synopsis-container">
+                                <p id="synopsis-text" class="text-sm text-secondary leading-relaxed line-clamp-2">
+                                    {synopsis}
+                                </p>
+                                <button id="synopsis-toggle" class="text-accent text-xs mt-1 hover:underline">See more...</button>
+                            </div>
+                        </div>
+                        <script>
+                            const toggle = document.getElementById('synopsis-toggle');
+                            const text = document.getElementById('synopsis-text');
+                            let expanded = false;
+                            
+                            toggle?.addEventListener('click', () => {
+                                expanded = !expanded;
+                                if (expanded) {
+                                    text?.classList.remove('line-clamp-2');
+                                    toggle.textContent = 'See less';
+                                } else {
+                                    text?.classList.add('line-clamp-2');
+                                    toggle.textContent = 'See more...';
+                                }
+                            });
+                        </script>
+                    )
+                }
+
+                <!-- Episode Grid -->
+                <div
+                    class="mt-4 p-4 bg-surface/50 rounded-xl border border-highlight"
+                >
+                    <h3 class="font-bold text-lg mb-4">Episodes</h3>
+                    <div
+                        class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2 overflow-y-auto no-scrollbar"
+                        style="max-height: 300px;"
+                    >
+                        {
+                            detailEpisodes.map((ep) => {
+                                const epNum = parseInt(
+                                    ep.episode.match(/Episode\s+(\d+)/i)?.[1] ||
+                                        "0",
+                                );
+                                // Assuming ep.slug is the valid slug for the watch page
+                                const isActive = epNum === currentEpNumber;
+
+                                return (
+                                    <a
+                                        href={`/watch/${ep.slug}`}
+                                        class={`aspect-square flex items-center justify-center rounded-lg border transition-colors font-medium text-sm ${isActive ? "bg-accent border-accent text-white" : "bg-surface border-highlight text-secondary hover:bg-highlight hover:text-primary"}`}
+                                    >
+                                        {epNum}
+                                    </a>
+                                );
+                            })
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations -->
+        <!-- Recommendations -->
+        {
+            recommendations.length > 0 && (
+                <div class="mt-4 px-4 md:px-0">
+                    <h2 class="text-lg font-bold mb-3">Recommendations</h2>
+                    <div class="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+                        {recommendations.map((item: any) => (
+                            <a
+                                href={`/detail/${item.slug}`}
+                                class="group flex flex-col gap-2 min-w-[100px] w-[100px] md:min-w-[140px] md:w-[140px]"
+                            >
+                                <div class="relative aspect-poster w-full overflow-hidden rounded-lg bg-highlight shadow-sm transition-transform duration-300 group-hover:scale-105">
+                                    <img
+                                        src={item.poster}
+                                        alt={item.title}
+                                        class="h-full w-full object-cover"
+                                        loading="lazy"
+                                    />
+                                    {item.episode && (
+                                        <div class="absolute top-1 left-1">
+                                            <span class="px-1.5 py-0.5 bg-accent text-[9px] font-bold text-white rounded">
+                                                EP {item.episode}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                                <h3 class="truncate text-xs font-medium text-secondary group-hover:text-accent transition-colors">
+                                    {item.title}
+                                </h3>
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            )
+        }
+    </div>
+</MainLayout>
