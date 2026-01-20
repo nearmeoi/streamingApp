@@ -11,6 +11,9 @@
   "dependencies": {
     "@astrojs/node": "^9.5.2",
     "@astrojs/vercel": "^9.0.4",
+    "@capacitor/android": "^8.0.1",
+    "@capacitor/cli": "^8.0.1",
+    "@capacitor/core": "^8.0.1",
     "@tailwindcss/vite": "^4.1.18",
     "astro": "^5.16.11",
     "hls.js": "^1.6.15",
