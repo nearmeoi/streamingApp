@@ -7,15 +7,28 @@ import Button from "../../components/ui/Button.astro";
 <AuthLayout title="Register - HuaStream">
   <div class="bg-surface p-8 rounded-2xl shadow-xl border border-highlight">
     <h1 class="text-2xl font-bold mb-6 text-center">Create Account</h1>
-    <form class="flex flex-col gap-4">
-      <Input type="text" label="Full Name" placeholder="John Doe" required />
+    <form id="register-form" class="flex flex-col gap-4">
+      <Input
+        type="text"
+        id="reg-name"
+        label="Full Name"
+        placeholder="John Doe"
+        required
+      />
       <Input
         type="email"
+        id="reg-email"
         label="Email Address"
         placeholder="you@example.com"
         required
       />
-      <Input type="password" label="Password" placeholder="••••••••" required />
+      <Input
+        type="password"
+        id="reg-password"
+        label="Password"
+        placeholder="••••••••"
+        required
+      />
 
       <Button type="submit" variant="primary" fullWidth class="mt-4"
         >Sign Up</Button
@@ -30,3 +43,57 @@ import Button from "../../components/ui/Button.astro";
     </div>
   </div>
 </AuthLayout>
+
+<script>
+  const registerForm = document.getElementById("register-form");
+
+  registerForm?.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const name = (document.getElementById("reg-name") as HTMLInputElement)
+      .value;
+    const email = (document.getElementById("reg-email") as HTMLInputElement)
+      .value;
+    const password = (
+      document.getElementById("reg-password") as HTMLInputElement
+    ).value;
+
+    if (name && email && password) {
+      // Get existing users
+      const usersStr = localStorage.getItem("huastream_users") || "[]";
+      const users = JSON.parse(usersStr);
+
+      // Check if user exists
+      if (users.find((u: any) => u.email === email)) {
+        alert("Email already registered!");
+        return;
+      }
+
+      // Create new user
+      const newUser = {
+        name,
+        email,
+        password, // In a real app, never store plain text passwords!
+        avatar: `https://api.dicebear.com/7.x/adventurer/svg?seed=${name.replace(/\s/g, "")}`,
+        joinedAt: Date.now(),
+      };
+
+      // Save to users list
+      users.push(newUser);
+      localStorage.setItem("huastream_users", JSON.stringify(users));
+
+      // Set current session
+      localStorage.setItem(
+        "huastream_user",
+        JSON.stringify({
+          name: newUser.name,
+          avatar: newUser.avatar,
+          email: newUser.email,
+        }),
+      );
+
+      // Redirect
+      window.location.href = "/";
+    }
+  });
+</script>

@@ -60,6 +60,7 @@ const isHome = Astro.url.pathname === "/";
       </Button>
       <a href="/profile" class="hidden md:block">
         <img
+          id="nav-avatar-desktop"
           src="https://placehold.co/100x100/e50914/FFF?text=U"
           alt="Profile"
           class="w-8 h-8 rounded-full border border-highlight"
@@ -69,6 +70,7 @@ const isHome = Astro.url.pathname === "/";
       <div class="md:hidden">
         <Button variant="icon" href="/profile" aria-label="Profile">
           <img
+            id="nav-avatar-mobile"
             src="https://placehold.co/100x100/e50914/FFF?text=U"
             alt="Profile"
             class="w-6 h-6 rounded-full"
@@ -78,3 +80,19 @@ const isHome = Astro.url.pathname === "/";
     </div>
   </div>
 </header>
+
+<script>
+  const navAvatarDesktop = document.getElementById(
+    "nav-avatar-desktop",
+  ) as HTMLImageElement;
+  const navAvatarMobile = document.getElementById(
+    "nav-avatar-mobile",
+  ) as HTMLImageElement;
+
+  const userStr = localStorage.getItem("huastream_user");
+  if (userStr) {
+    const user = JSON.parse(userStr);
+    if (navAvatarDesktop) navAvatarDesktop.src = user.avatar;
+    if (navAvatarMobile) navAvatarMobile.src = user.avatar;
+  }
+</script>
