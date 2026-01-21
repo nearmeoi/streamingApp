@@ -299,7 +299,11 @@ const fallbackStream = "https://files.vidstack.io/agent-327/hls/stream.m3u8";
             (!src.includes(".m3u8") && !src.includes(".mp4"));
 
         // --- BYPASS: Detect Anichin Embed and use direct HLS ---
-        if (src.includes("anichinv2.icu") || src.includes("anichin.club")) {
+        // Examples:
+        // - https://anichin.stream/?id=v72egbk
+        // - https://anichinv2.icu/?id=v6q7v4r
+        if (src.includes("anichin")) {
+            // Broad check for any anichin domain
             const idMatch = src.match(/(?:id=|\/v\/|\/z\/)([a-zA-Z0-9]+)/);
             const id = idMatch ? idMatch[1] : null;
             if (id) {
