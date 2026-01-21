@@ -15,6 +15,9 @@ const cleanSlug = media.slug.endsWith("/")
   ? media.slug.slice(0, -1)
   : media.slug;
 const href = `/watch/${cleanSlug}`;
+
+// Clean title (remove Episode X)
+const cleanTitle = media.title.replace(/\s+(Episode|Ep|E)\s+\d+.*/i, "").trim();
 ---
 
 <a href={href} class="group relative flex flex-col gap-2 w-full outline-none">
@@ -64,7 +67,7 @@ const href = `/watch/${cleanSlug}`;
     <h3
       class="truncate text-sm font-medium text-primary group-hover:text-accent transition-colors"
     >
-      {media.title}
+      {cleanTitle}
     </h3>
   </div>
 </a>
