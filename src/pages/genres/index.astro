@@ -1,21 +1,5 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
-import { getGenres, type GenreItem } from "../../lib/api";
-
-const genresData = await getGenres();
-const allGenres: GenreItem[] = genresData?.data || [];
-
-// Filter out duplicates and non-genre items (years, studios, seasons)
-const yearPattern = /^(20\d{2}|Spring|Summer|Winter|Fall)/;
-const genres = allGenres
-    .filter(
-        (g: GenreItem, index: number, self: GenreItem[]) =>
-            // Remove duplicates by slug
-            index === self.findIndex((t: GenreItem) => t.slug === g.slug) &&
-            // Remove year/season tags
-            !yearPattern.test(g.name),
-    )
-    .slice(0, 50); // Limit to main genres
 ---
 
 <MainLayout title="Genres - HuaStream">
@@ -38,24 +22,81 @@ const genres = allGenres
                     ><path d="m15 18-6-6 6-6"></path></svg
                 >
             </a>
-            <h1 class="text-2xl font-bold">Browse by Genre</h1>
+            <h1 class="text-2xl font-bold">Telusuri Berdasarkan Genre</h1>
         </div>
 
+        <!-- Skeleton Grid -->
         <div
+            id="genres-skeleton"
             class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
         >
             {
-                genres.map((genre) => (
-                    <a
-                        href={`/genres/${genre.slug}/1`}
-                        class="group p-4 bg-surface hover:bg-highlight rounded-xl border border-highlight text-center transition-all hover:scale-105 hover:border-accent/50"
-                    >
-                        <span class="text-sm font-medium text-primary group-hover:text-accent transition-colors">
-                            {genre.name}
-                        </span>
-                    </a>
+                Array.from({ length: 20 }).map(() => (
+                    <div class="skeleton h-14 rounded-xl" />
                 ))
             }
         </div>
+
+        <!-- Content Grid (hidden initially) -->
+        <div
+            id="genres-content"
+            class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
+        >
+        </div>
     </div>
 </MainLayout>
+
+<script>
+    async function loadGenres() {
+        if (
+            window.location.pathname !== "/genres" &&
+            window.location.pathname !== "/genres/"
+        )
+            return;
+        try {
+            const response = await fetch("/api/genres");
+            if (!response.ok) throw new Error("API error");
+
+            const data = await response.json();
+            const allGenres = data.data || [];
+
+            // Filter out duplicates and non-genre items
+            const yearPattern = /^(20\d{2}|Spring|Summer|Winter|Fall)/;
+            const genres = allGenres
+                .filter(
+                    (g: any, index: number, self: any[]) =>
+                        index ===
+                            self.findIndex((t: any) => t.slug === g.slug) &&
+                        !yearPattern.test(g.name),
+                )
+                .slice(0, 50);
+
+            renderGenres(genres);
+        } catch (error) {
+            console.error("[Genres] Failed to load:", error);
+        }
+    }
+
+    function renderGenres(genres: any[]) {
+        const skeleton = document.getElementById("genres-skeleton");
+        const content = document.getElementById("genres-content");
+
+        if (!content) return;
+
+        content.innerHTML = genres
+            .map(
+                (genre) => `
+      <a href="/genres/${genre.slug}/1" class="group p-4 bg-surface hover:bg-highlight rounded-xl border border-highlight text-center transition-all hover:scale-105 hover:border-accent/50">
+        <span class="text-sm font-medium text-primary group-hover:text-accent transition-colors">${genre.name}</span>
+      </a>
+    `,
+            )
+            .join("");
+
+        skeleton?.classList.add("hidden");
+        content.classList.remove("hidden");
+    }
+
+    loadGenres();
+    document.addEventListener("astro:page-load", loadGenres);
+</script>

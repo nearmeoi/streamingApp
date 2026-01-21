@@ -1,18 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --color-bg-base: #0a0a0a; /* Deep dark base */
+  --color-bg-base: #0a0a0a;
+  /* Deep dark base */
   --color-bg-surface: #121212;
   --color-bg-highlight: #2a2a2a;
   --color-text-primary: #ffffff;
   --color-text-secondary: #a0a0a0;
-  --color-accent: #6d28d9; /* Deep Purple from reference */
+  --color-accent: #6d28d9;
+  /* Deep Purple from reference */
   --color-accent-blue: #2563eb;
 }
 
 @theme {
   --font-sans: 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  
+
   --color-base: var(--color-bg-base);
   --color-surface: var(--color-bg-surface);
   --color-highlight: var(--color-bg-highlight);
@@ -65,4 +67,152 @@ body {
 /* Cinematic Glow */
 .glow-purple {
   box-shadow: 0 0 100px 20px rgba(109, 40, 217, 0.15);
+}
+
+/* ========== PERFORMANCE OPTIMIZATIONS ========== */
+
+/* Remove 300ms tap delay on mobile */
+a,
+button,
+[role="button"],
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+/* Instant tap feedback */
+a:active,
+button:active,
+[role="button"]:active {
+  opacity: 0.8;
+  transform: scale(0.98);
+}
+
+/* Skeleton Loading Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg,
+      var(--color-bg-highlight) 25%,
+      var(--color-bg-surface) 50%,
+      var(--color-bg-highlight) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+/* Image fade-in on load */
+img {
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+}
+
+img[data-loading="true"] {
+  opacity: 0;
+}
+
+/* View Transitions - FAST page changes */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.15s;
+  /* Faster transition */
+}
+
+::view-transition-old(root) {
+  animation-name: fade-out;
+}
+
+::view-transition-new(root) {
+  animation-name: fade-in;
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Navigation Loading Bar - shows during page transition */
+.nav-loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-blue));
+  z-index: 9999;
+  animation: nav-loading 1s ease-in-out infinite;
+}
+
+@keyframes nav-loading {
+  0% {
+    width: 0%;
+    left: 0;
+  }
+
+  50% {
+    width: 60%;
+    left: 20%;
+  }
+
+  100% {
+    width: 0%;
+    left: 100%;
+  }
+}
+
+/* View Transitions - Prevent old content flash */
+::view-transition-old(root) {
+  animation: fade-out 0.1s ease-out forwards;
+}
+
+::view-transition-new(root) {
+  animation: fade-in 0.15s ease-in;
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Hide dynamic content during navigation */
+html.is-navigating [data-dynamic-content] {
+  visibility: hidden !important;
 }

@@ -5,7 +5,7 @@ const userName = "Guest User";
 const userAvatar = "https://placehold.co/200x200/1a1a2e/e50914?text=G";
 ---
 
-<MainLayout title="Profile - HuaStream">
+<MainLayout title="Profil - HuaStream">
    <div class="container mx-auto px-4 py-8 max-w-md">
       <!-- Profile Card -->
       <div class="bg-surface rounded-2xl border border-highlight p-6 mb-6">
@@ -18,24 +18,24 @@ const userAvatar = "https://placehold.co/200x200/1a1a2e/e50914?text=G";
                class="w-24 h-24 rounded-full border-4 border-accent mb-4"
             />
             <h1 id="profile-name" class="text-2xl font-bold">{userName}</h1>
-            <p class="text-secondary text-sm">Welcome back!</p>
+            <p class="text-secondary text-sm">Selamat datang kembali!</p>
          </div>
 
          <!-- Quick Stats -->
          <div class="grid grid-cols-3 gap-4 mb-6">
             <div class="text-center">
                <span class="block text-xl font-bold text-accent">0</span>
-               <span class="text-xs text-secondary">Watched</span>
+               <span class="text-xs text-secondary">Ditonton</span>
             </div>
             <div class="text-center">
                <span id="favorites-count" class="block text-xl font-bold"
                   >0</span
                >
-               <span class="text-xs text-secondary">Favorites</span>
+               <span class="text-xs text-secondary">Favorit</span>
             </div>
             <div class="text-center">
                <span class="block text-xl font-bold">0</span>
-               <span class="text-xs text-secondary">Downloads</span>
+               <span class="text-xs text-secondary">Unduhan</span>
             </div>
          </div>
       </div>
@@ -71,8 +71,8 @@ const userAvatar = "https://placehold.co/200x200/1a1a2e/e50914?text=G";
                >
             </div>
             <div class="flex-1">
-               <span class="font-medium">Release Schedule</span>
-               <p class="text-xs text-secondary">Check upcoming episodes</p>
+               <span class="font-medium">Jadwal Rilis</span>
+               <p class="text-xs text-secondary">Lihat episode mendatang</p>
             </div>
             <svg
                xmlns="http://www.w3.org/2000/svg"
@@ -110,8 +110,8 @@ const userAvatar = "https://placehold.co/200x200/1a1a2e/e50914?text=G";
                >
             </div>
             <div class="flex-1">
-               <span class="font-medium">Search Donghua</span>
-               <p class="text-xs text-secondary">Find your favorite series</p>
+               <span class="font-medium">Cari Donghua</span>
+               <p class="text-xs text-secondary">Temukan serial favoritmu</p>
             </div>
             <svg
                xmlns="http://www.w3.org/2000/svg"
@@ -150,8 +150,8 @@ const userAvatar = "https://placehold.co/200x200/1a1a2e/e50914?text=G";
                >
             </div>
             <div class="flex-1">
-               <span class="font-medium">Settings</span>
-               <p class="text-xs text-secondary">App preferences</p>
+               <span class="font-medium">Pengaturan</span>
+               <p class="text-xs text-secondary">Pengaturan aplikasi</p>
             </div>
             <svg
                xmlns="http://www.w3.org/2000/svg"
@@ -190,8 +190,8 @@ const userAvatar = "https://placehold.co/200x200/1a1a2e/e50914?text=G";
                >
             </div>
             <div class="flex-1">
-               <span class="font-medium">Help & Support</span>
-               <p class="text-xs text-secondary">FAQ and contact</p>
+               <span class="font-medium">Bantuan & Dukungan</span>
+               <p class="text-xs text-secondary">FAQ dan kontak</p>
             </div>
             <svg
                xmlns="http://www.w3.org/2000/svg"
@@ -230,7 +230,7 @@ const userAvatar = "https://placehold.co/200x200/1a1a2e/e50914?text=G";
                y1="12"
                y2="12"></line></svg
          >
-         Log Out
+         Log Out → Keluar
       </button>
 
       <!-- App Version -->
@@ -239,38 +239,54 @@ const userAvatar = "https://placehold.co/200x200/1a1a2e/e50914?text=G";
 </MainLayout>
 
 <script>
-   // Check Auth Session
-   const userStr = localStorage.getItem("huastream_user");
-   if (!userStr) {
-      window.location.href = "/auth/login";
-   }
-
-   const profileName = document.getElementById("profile-name");
-   const profileAvatar = document.getElementById(
-      "profile-avatar",
-   ) as HTMLImageElement;
-   const favoritesCount = document.getElementById("favorites-count");
-   const logoutBtn = document.getElementById("logout-btn");
-
-   // Load User Data
-   if (userStr) {
-      const user = JSON.parse(userStr);
-      if (profileName) profileName.textContent = user.name;
-      if (profileAvatar) profileAvatar.src = user.avatar;
-   }
-
-   // Load Stats
-   const mylistStr = localStorage.getItem("huastream_mylist");
-   if (mylistStr && favoritesCount) {
-      const list = JSON.parse(mylistStr);
-      favoritesCount.textContent = list.length.toString();
-   }
-
-   // Handle Logout
-   logoutBtn?.addEventListener("click", () => {
-      if (confirm("Are you sure you want to log out?")) {
-         localStorage.removeItem("huastream_user");
-         window.location.href = "/";
+   function initProfile() {
+      if (
+         window.location.pathname !== "/profile" &&
+         window.location.pathname !== "/profile/"
+      )
+         return;
+      // Check Auth Session
+      const userStr = localStorage.getItem("huastream_user");
+      if (!userStr) {
+         window.location.href = "/auth/login";
+         return;
       }
-   });
+
+      const profileName = document.getElementById("profile-name");
+      const profileAvatar = document.getElementById(
+         "profile-avatar",
+      ) as HTMLImageElement;
+      const favoritesCount = document.getElementById("favorites-count");
+      const logoutBtn = document.getElementById("logout-btn");
+
+      // Load User Data
+      if (userStr) {
+         const user = JSON.parse(userStr);
+         if (profileName) profileName.textContent = user.name;
+         if (profileAvatar) profileAvatar.src = user.avatar;
+      }
+
+      // Load Stats
+      const mylistStr = localStorage.getItem("huastream_mylist");
+      if (mylistStr && favoritesCount) {
+         const list = JSON.parse(mylistStr);
+         favoritesCount.textContent = list.length.toString();
+      }
+
+      // Handle Logout (remove old listener first)
+      const newLogoutBtn = logoutBtn?.cloneNode(true);
+      if (logoutBtn && newLogoutBtn) {
+         logoutBtn.parentNode?.replaceChild(newLogoutBtn, logoutBtn);
+         newLogoutBtn.addEventListener("click", () => {
+            if (confirm("Apakah Anda yakin ingin keluar?")) {
+               localStorage.removeItem("huastream_user");
+               window.location.href = "/";
+            }
+         });
+      }
+   }
+
+   // Run on initial load and View Transitions
+   initProfile();
+   document.addEventListener("astro:page-load", initProfile);
 </script>

@@ -1,128 +1,154 @@
 ---
 import MainLayout from "../layouts/MainLayout.astro";
-import MediaCard from "../components/media/MediaCard.astro";
-import { searchDonghua } from "../lib/api";
 
-// Get search query from URL
 const query = Astro.url.searchParams.get("q") || "";
+const hasSearched = query.trim().length > 0;
 
-// Fetch results if query exists
-let results: any[] = [];
-let hasSearched = false;
-
-if (query.trim()) {
-   hasSearched = true;
-   const searchResult = await searchDonghua(query);
-   if (searchResult && searchResult.data) {
-      // Map to format expected by MediaCard
-      results = searchResult.data.map((item) => ({
-         title: item.title,
-         slug: item.slug, // This is series slug, we need to go to detail first or latest episode
-         poster: item.poster,
-         status: item.status,
-         type: item.type,
-      }));
-   }
-}
-
-// Trending keywords
 const trendingSearches = [
-   "Perfect World",
-   "Battle Through The Heavens",
-   "Soul Land",
-   "Martial Master",
-   "Swallowed Star",
+  "Perfect World",
+  "Battle Through The Heavens",
+  "Soul Land",
+  "Martial Master",
+  "Swallowed Star",
 ];
 ---
 
-<MainLayout title="Search Donghua - HuaStream">
-   <div class="container mx-auto px-4 py-8 md:py-12">
-      <div class="max-w-4xl mx-auto md:glass md:p-10 md:rounded-3xl">
-         <h1 class="text-3xl font-bold mb-6 text-center md:text-left">
-            Search Donghua
-         </h1>
+<MainLayout title="Cari Donghua - HuaStream">
+  <div class="container mx-auto px-4 py-8 md:py-12">
+    <div class="max-w-4xl mx-auto md:glass md:p-10 md:rounded-3xl">
+      <h1 class="text-3xl font-bold mb-6 text-center md:text-left">Cari Donghua</h1>
 
-         <!-- Search Form & Trending -->
-         <div class="mb-10">
-            <form action="/search" method="get" class="flex gap-2 mb-3">
-               <input
-                  type="search"
-                  name="q"
-                  value={query}
-                  placeholder="Search donghua..."
-                  class="flex-1 px-4 py-3 bg-surface border border-highlight rounded-lg text-primary placeholder:text-secondary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-               />
-               <button
-                  type="submit"
-                  class="px-4 py-2 text-sm md:px-6 md:py-3 md:text-base bg-accent text-white rounded-lg font-bold hover:bg-accent/80 transition-colors"
-               >
-                  Search
-               </button>
-            </form>
+      <!-- Search Form & Trending -->
+      <div class="mb-10">
+        <form action="/search" method="get" class="flex gap-2 mb-3">
+          <input
+            type="search"
+            name="q"
+            value={query}
+            placeholder="Cari donghua..."
+            class="flex-1 px-4 py-3 bg-surface border border-highlight rounded-lg text-primary placeholder:text-secondary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+          />
+          <button
+            type="submit"
+            class="px-4 py-2 text-sm md:px-6 md:py-3 md:text-base bg-accent text-white rounded-lg font-bold hover:bg-accent/80 transition-colors"
+          >
+            Cari
+          </button>
+        </form>
 
-            <!-- Trending Keywords (Horizontal Scroll) -->
-            {
-               !hasSearched && (
-                  <div class="flex overflow-x-auto no-scrollbar gap-2 pb-2">
-                     {trendingSearches.map((term) => (
-                        <a
-                           href={`/search?q=${encodeURIComponent(term)}`}
-                           class="px-3 py-1.5 bg-surface hover:bg-highlight rounded-full text-xs font-medium whitespace-nowrap transition-colors border border-highlight flex-shrink-0"
-                        >
-                           {term}
-                        </a>
-                     ))}
-                  </div>
-               )
-            }
-         </div>
-
-         <!-- Results -->
-         {
-            hasSearched && (
-               <section>
-                  <h2 class="text-xl font-bold mb-4">
-                     {results.length > 0
-                        ? `Results for "${query}"`
-                        : `No results found for "${query}"`}
-                  </h2>
-                  {results.length > 0 ? (
-                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        {results.map((media) => (
-                           <a
-                              href={`/detail/${media.slug}`}
-                              class="group relative flex flex-col gap-2 w-full outline-none"
-                           >
-                              <div class="relative aspect-poster w-full overflow-hidden rounded-lg bg-highlight shadow-sm transition-transform duration-300 group-hover:scale-105">
-                                 <img
-                                    src={media.poster}
-                                    alt={media.title}
-                                    class="h-full w-full object-cover"
-                                    loading="lazy"
-                                 />
-                                 <div class="absolute top-2 left-2">
-                                    <span class="px-1.5 py-0.5 bg-accent/80 text-[10px] font-bold text-white rounded">
-                                       {media.status}
-                                    </span>
-                                 </div>
-                              </div>
-                              <div class="flex flex-col gap-0.5">
-                                 <h3 class="truncate text-sm font-medium text-primary group-hover:text-accent transition-colors">
-                                    {media.title}
-                                 </h3>
-                                 <span class="text-xs text-secondary">
-                                    {media.type}
-                                 </span>
-                              </div>
-                           </a>
-                        ))}
-                     </div>
-                  ) : (
-                     <p class="text-secondary">Try a different search term.</p>
-                  )}
-               </section>
-            )
-         }
+        <!-- Trending Keywords -->
+        {!hasSearched && (
+          <div class="flex overflow-x-auto no-scrollbar gap-2 pb-2">
+            {trendingSearches.map((term) => (
+              <a
+                href={`/search?q=${encodeURIComponent(term)}`}
+                class="px-3 py-1.5 bg-surface hover:bg-highlight rounded-full text-xs font-medium whitespace-nowrap transition-colors border border-highlight flex-shrink-0"
+              >
+                {term}
+              </a>
+            ))}
+          </div>
+        )}
       </div>
-   </div>
+
+      <!-- Results Section (only when searching) -->
+      {hasSearched && (
+        <section>
+          <h2 id="results-title" class="text-xl font-bold mb-4">
+            Mencari "${query}"...
+          </h2>
+          
+          <!-- Skeleton Grid -->
+          <div id="search-skeleton" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {Array.from({ length: 10 }).map(() => (
+              <div class="flex flex-col gap-2">
+                <div class="aspect-poster w-full skeleton rounded-lg"></div>
+                <div class="skeleton w-3/4 h-4 rounded"></div>
+                <div class="skeleton w-1/2 h-3 rounded"></div>
+              </div>
+            ))}
+          </div>
+          
+          <!-- Results Grid (hidden initially) -->
+          <div id="search-content" class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+          
+          <!-- No Results Message (hidden initially) -->
+          <p id="no-results" class="hidden text-secondary">Coba gunakan kata kunci lain.</p>
+        </section>
+      )}
+    </div>
+  </div>
 </MainLayout>
+
+<script define:vars={{ query, hasSearched }}>
+  async function performSearch() {
+    if (window.location.pathname !== "/search" && window.location.pathname !== "/search/") return;
+    if (!hasSearched || !query.trim()) return;
+    
+    try {
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      if (!response.ok) throw new Error('API error');
+      
+      const data = await response.json();
+      const results = (data.data || []).map(item => ({
+        title: item.title,
+        slug: item.slug,
+        poster: item.poster,
+        status: item.status,
+        type: item.type,
+      }));
+      
+      renderResults(results);
+      
+    } catch (error) {
+      console.error('[Search] Failed to load:', error);
+    }
+  }
+
+  function renderResults(results) {
+    const title = document.getElementById('results-title');
+    const skeleton = document.getElementById('search-skeleton');
+    const content = document.getElementById('search-content');
+    const noResults = document.getElementById('no-results');
+    
+    if (!content) return;
+    
+    if (results.length === 0) {
+      if (title) title.textContent = `Tidak ditemukan hasil untuk "${query}"`;
+      skeleton?.classList.add('hidden');
+      noResults?.classList.remove('hidden');
+      return;
+    }
+    
+    if (title) title.textContent = `Hasil untuk "${query}"`;
+    
+    content.innerHTML = results.map(media => `
+      <a href="/detail/${media.slug}" class="group relative flex flex-col gap-2 w-full outline-none">
+        <div class="relative aspect-poster w-full overflow-hidden rounded-lg bg-highlight shadow-sm transition-transform duration-300 group-hover:scale-105">
+          <div class="absolute inset-0 skeleton"></div>
+          <img 
+            src="${media.poster}" 
+            alt="${media.title}" 
+            class="relative h-full w-full object-cover opacity-0 transition-opacity duration-300"
+            loading="lazy"
+            decoding="async"
+            onload="this.classList.remove('opacity-0'); this.classList.add('opacity-100');"
+          />
+          <div class="absolute top-2 left-2">
+            <span class="px-1.5 py-0.5 bg-accent/80 text-[10px] font-bold text-white rounded">${media.status}</span>
+          </div>
+        </div>
+        <div class="flex flex-col gap-0.5">
+          <h3 class="truncate text-sm font-medium text-primary group-hover:text-accent transition-colors">${media.title}</h3>
+          <span class="text-xs text-secondary">${media.type}</span>
+        </div>
+      </a>
+    `).join('');
+    
+    skeleton?.classList.add('hidden');
+    content.classList.remove('hidden');
+  }
+  
+  performSearch();
+  document.addEventListener('astro:page-load', performSearch);
+</script>

@@ -21,12 +21,17 @@ const href = `/watch/${cleanSlug}`;
   <div
     class="relative aspect-poster w-full overflow-hidden rounded-lg bg-highlight shadow-sm transition-transform duration-300 group-hover:scale-105 group-focus:ring-2 group-focus:ring-accent"
   >
+    <!-- Skeleton Placeholder (visible while image loads) -->
+    <div class="absolute inset-0 skeleton"></div>
+
     <!-- Image -->
     <img
       src={media.poster}
       alt={media.title}
-      class="h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
+      class="relative h-full w-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
       loading="lazy"
+      decoding="async"
+      onload="this.classList.remove('opacity-0'); this.classList.add('opacity-90');"
     />
 
     <!-- Gradient Overlay -->

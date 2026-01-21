@@ -7,6 +7,10 @@ import { VitePWA } from 'vite-plugin-pwa';
 // https://astro.build/config
 export default defineConfig({
   output: 'server',
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: 'viewport'
+  },
   adapter: vercel({
     webAnalytics: {
       enabled: true,
@@ -41,7 +45,46 @@ export default defineConfig({
         },
         workbox: {
           navigateFallback: '/offline',
-          globPatterns: ['**/*.{css,js,html,svg,png,ico,txt}']
+          globPatterns: ['**/*.{css,js,html,svg,png,ico,txt}'],
+          runtimeCaching: [
+            {
+              // Cache pages - Network first, fallback to cache
+              urlPattern: ({ request }) => request.mode === 'navigate',
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'pages-cache',
+                expiration: {
+                  maxEntries: 50,
+                  maxAgeSeconds: 60 * 60 * 24 // 1 day
+                },
+                networkTimeoutSeconds: 3
+              }
+            },
+            {
+              // Cache API responses
+              urlPattern: /^https:\/\/www\.sankavollerei\.com\/anime\/donghua/,
+              handler: 'StaleWhileRevalidate',
+              options: {
+                cacheName: 'api-cache',
+                expiration: {
+                  maxEntries: 100,
+                  maxAgeSeconds: 60 * 5 // 5 minutes
+                }
+              }
+            },
+            {
+              // Cache images
+              urlPattern: /\.(?:png|jpg|jpeg|webp|gif|svg)$/,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'images-cache',
+                expiration: {
+                  maxEntries: 200,
+                  maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+                }
+              }
+            }
+          ]
         }
       })
     ]

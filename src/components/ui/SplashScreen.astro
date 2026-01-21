@@ -4,7 +4,7 @@
 
 <div
     id="splash-screen"
-    class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-base transition-opacity duration-1000"
+    class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-base transition-opacity duration-500 hidden"
 >
     <div class="flex flex-col items-center gap-4 animate-fade-in-up">
         <img
@@ -30,15 +30,15 @@
         }
     }
     .animate-loading-progress {
-        animation: loading-progress 2s ease-in-out;
+        animation: loading-progress 1.2s ease-in-out;
     }
     .animate-fade-in-up {
-        animation: fadeInUp 0.5s ease-out forwards;
+        animation: fadeInUp 0.3s ease-out forwards;
     }
     @keyframes fadeInUp {
         from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(10px);
         }
         to {
             opacity: 1;
@@ -48,21 +48,35 @@
 </style>
 
 <script>
-    const splash = document.getElementById("splash-screen");
+    // Only run on initial page load, not on View Transitions navigation
+    const initSplash = () => {
+        const splash = document.getElementById("splash-screen");
+        if (!splash) return;
 
-    // Show splash only once per session
-    const hasSeenSplash = sessionStorage.getItem("huastream_splash_seen");
+        // Use localStorage so it only shows ONCE EVER (not per session)
+        const hasSeenSplash = localStorage.getItem("huastream_splash_seen");
 
-    if (hasSeenSplash) {
-        splash?.remove();
-    } else {
-        // Hide after delay
-        setTimeout(() => {
-            splash?.classList.add("opacity-0", "pointer-events-none");
+        if (hasSeenSplash) {
+            // Don't show splash on subsequent visits
+            splash.remove();
+        } else {
+            // First time visitor - show splash briefly
+            splash.classList.remove("hidden");
+
             setTimeout(() => {
-                splash?.remove();
-                sessionStorage.setItem("huastream_splash_seen", "true");
-            }, 1000);
-        }, 2500);
+                splash.classList.add("opacity-0", "pointer-events-none");
+                setTimeout(() => {
+                    splash.remove();
+                    localStorage.setItem("huastream_splash_seen", "true");
+                }, 500);
+            }, 1500); // Reduced from 2500ms to 1500ms
+        }
+    };
+
+    // Only init on first load, NOT on astro:page-load (View Transitions)
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initSplash);
+    } else {
+        initSplash();
     }
 </script>

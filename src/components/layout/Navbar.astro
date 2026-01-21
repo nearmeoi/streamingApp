@@ -2,11 +2,11 @@
 import Button from "../ui/Button.astro";
 
 const navItems = [
-  { label: "Home", href: "/" },
-  { label: "Genres", href: "/genres" },
-  { label: "Schedule", href: "/schedule" },
-  { label: "Search", href: "/search" },
-  { label: "My List", href: "/mylist" },
+  { label: "Beranda", href: "/" },
+  { label: "Genre", href: "/genres" },
+  { label: "Jadwal", href: "/schedule" },
+  { label: "Cari", href: "/search" },
+  { label: "Daftar Saya", href: "/mylist" },
 ];
 
 const isHome = Astro.url.pathname === "/";
@@ -82,17 +82,23 @@ const isHome = Astro.url.pathname === "/";
 </header>
 
 <script>
-  const navAvatarDesktop = document.getElementById(
-    "nav-avatar-desktop",
-  ) as HTMLImageElement;
-  const navAvatarMobile = document.getElementById(
-    "nav-avatar-mobile",
-  ) as HTMLImageElement;
+  function updateNavAvatar() {
+    const navAvatarDesktop = document.getElementById(
+      "nav-avatar-desktop",
+    ) as HTMLImageElement;
+    const navAvatarMobile = document.getElementById(
+      "nav-avatar-mobile",
+    ) as HTMLImageElement;
 
-  const userStr = localStorage.getItem("huastream_user");
-  if (userStr) {
-    const user = JSON.parse(userStr);
-    if (navAvatarDesktop) navAvatarDesktop.src = user.avatar;
-    if (navAvatarMobile) navAvatarMobile.src = user.avatar;
+    const userStr = localStorage.getItem("huastream_user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      if (navAvatarDesktop) navAvatarDesktop.src = user.avatar;
+      if (navAvatarMobile) navAvatarMobile.src = user.avatar;
+    }
   }
+
+  // Run on initial load and View Transitions
+  updateNavAvatar();
+  document.addEventListener("astro:page-load", updateNavAvatar);
 </script>

@@ -1,113 +1,239 @@
 ---
-import MainLayout from '../layouts/MainLayout.astro';
-import { getSchedule } from '../lib/api';
+import MainLayout from "../layouts/MainLayout.astro";
 
-const scheduleData = await getSchedule();
-const schedule = scheduleData?.schedule || [];
+const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+const today = days[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1]; // Sunday (0) -> 6, Monday (1) -> 0
 
-// Get current day
-const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const today = days[new Date().getDay()];
+const dayMapping: Record<string, string> = {
+  Sunday: "Minggu",
+  Monday: "Senin",
+  Tuesday: "Selasa",
+  Wednesday: "Rabu",
+  Thursday: "Kamis",
+  Friday: "Jumat",
+  Saturday: "Sabtu",
+};
 ---
 
-<MainLayout title="Schedule - HuaStream">
+<MainLayout title="Jadwal - HuaStream">
   <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-6">Release Schedule</h1>
-    
-    <!-- Day Tabs -->
-    <div class="flex overflow-x-auto gap-2 pb-4 no-scrollbar mb-6 sticky top-16 bg-base z-40 py-2">
-      {schedule.map((dayData) => (
-        <button 
-          data-day={dayData.day}
-          class={`day-tab px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${dayData.day === today ? 'bg-accent text-white' : 'bg-surface text-secondary hover:bg-highlight border border-highlight'}`}
-        >
-          {dayData.day}
-          <span class="ml-1 text-xs opacity-70">({dayData.donghua_list.length})</span>
-        </button>
-      ))}
+    <h1 class="text-3xl font-bold mb-6">Jadwal Rilis</h1>
+
+    <!-- Day Tabs Skeleton -->
+    <div
+      id="tabs-skeleton"
+      class="flex overflow-x-auto gap-2 pb-4 no-scrollbar mb-6 sticky top-16 bg-base z-40 py-2"
+    >
+      {
+        days.map((day) => (
+          <div class="skeleton w-24 h-10 rounded-lg shrink-0" />
+        ))
+      }
     </div>
 
-    <!-- Schedule Content -->
-    <div id="schedule-content">
-      {schedule.map((dayData) => (
-        <div 
-          data-day-content={dayData.day} 
-          class={`day-content ${dayData.day === today ? '' : 'hidden'}`}
-        >
-          <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
-            {dayData.day}
-            {dayData.day === today && <span class="px-2 py-0.5 bg-accent text-white text-xs rounded">Today</span>}
-          </h2>
-          
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {dayData.donghua_list.map((item) => (
-              <a href={`/detail/${item.slug}`} class="group flex flex-col gap-2">
-                <div class="relative aspect-poster w-full overflow-hidden rounded-lg bg-highlight shadow-sm transition-transform duration-300 group-hover:scale-105">
-                  <img src={item.poster} alt={item.title} class="h-full w-full object-cover" loading="lazy" />
-                  
-                  <!-- Episode Badge -->
-                  <div class="absolute top-2 left-2 flex gap-1">
-                    <span class="px-1.5 py-0.5 bg-accent text-[10px] font-bold text-white rounded">EP {item.episode}</span>
-                  </div>
-                  
-                  <!-- Release Time -->
-                  {item.release_time && (
-                    <div class="absolute bottom-2 right-2">
-                      <span class="px-1.5 py-0.5 bg-black/70 text-[10px] text-white rounded backdrop-blur-sm">
-                        {item.release_time}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                
-                <div class="flex flex-col gap-0.5">
-                  <h3 class="truncate text-sm font-medium text-primary group-hover:text-accent transition-colors">
-                    {item.title}
-                  </h3>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      ))}
+    <!-- Day Tabs (hidden initially) -->
+    <div
+      id="day-tabs"
+      class="hidden flex overflow-x-auto gap-2 pb-4 no-scrollbar mb-6 sticky top-16 bg-base z-40 py-2"
+    >
     </div>
+
+    <!-- Schedule Content Skeleton -->
+    <div id="content-skeleton">
+      <div class="skeleton w-32 h-8 rounded mb-4"></div>
+      <div
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+      >
+        {
+          Array.from({ length: 12 }).map(() => (
+            <div class="flex flex-col gap-2">
+              <div class="aspect-poster w-full skeleton rounded-lg" />
+              <div class="skeleton w-3/4 h-4 rounded" />
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <!-- Schedule Content (hidden initially) -->
+    <div id="schedule-content" class="hidden"></div>
   </div>
 </MainLayout>
 
-<script>
-  // Run on initial load and page transitions
-  function initScheduleTabs() {
-    const tabs = document.querySelectorAll('.day-tab');
-    const contents = document.querySelectorAll('.day-content');
+<script define:vars={{ today, dayMapping }}>
+  // Prevent Zombie Script
+  async function loadSchedule() {
+    if (
+      window.location.pathname !== "/schedule" &&
+      window.location.pathname !== "/schedule/"
+    )
+      return;
 
-    tabs.forEach(tab => {
-      tab.addEventListener('click', (e) => {
+    try {
+      const response = await fetch("/api/schedule");
+      if (!response.ok) throw new Error("API error");
+
+      const data = await response.json();
+      const schedule = data.schedule || [];
+
+      renderTabs(schedule);
+      renderContent(schedule);
+      initTabListeners();
+    } catch (error) {
+      console.error("[Schedule] Failed to load:", error);
+    }
+  }
+
+  function renderTabs(schedule) {
+    const tabsSkeleton = document.getElementById("tabs-skeleton");
+    const tabsContainer = document.getElementById("day-tabs");
+
+    if (!tabsContainer) return;
+
+    // Default order (Monday to Sunday)
+    const daysOrder = [
+      "Senin",
+      "Selasa",
+      "Rabu",
+      "Kamis",
+      "Jumat",
+      "Sabtu",
+      "Minggu",
+    ];
+
+    // Sort schedule based on daysOrder (Monday First)
+    schedule.sort((a, b) => {
+      const dayA = dayMapping[a.day] || a.day;
+      const dayB = dayMapping[b.day] || b.day;
+      return daysOrder.indexOf(dayA) - daysOrder.indexOf(dayB);
+    });
+
+    // Sort schedule based on daysOrder if needed, but usually we just map usage
+    // Here we render tabs for all days or just available? Original code rendered tabs for all schedule items
+    // But Step 707 code rendered tabs based on *schedule data* being mapped.
+
+    // Let's stick closer to the logic in Step 707
+    tabsContainer.innerHTML = schedule
+      .map((dayData) => {
+        const indonesianDay = dayMapping[dayData.day] || dayData.day;
+        return `
+      <button 
+        data-day="${indonesianDay}"
+        class="day-tab px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
+          indonesianDay === today
+            ? "bg-accent text-white"
+            : "bg-surface text-secondary hover:bg-highlight border border-highlight"
+        }"
+      >
+        ${indonesianDay}
+        <span class="ml-1 text-xs opacity-70">(${dayData.donghua_list.length})</span>
+      </button>
+    `;
+      })
+      .join("");
+
+    tabsSkeleton?.classList.add("hidden");
+    tabsContainer.classList.remove("hidden");
+  }
+
+  function renderContent(schedule) {
+    const contentSkeleton = document.getElementById("content-skeleton");
+    const contentContainer = document.getElementById("schedule-content");
+
+    if (!contentContainer) return;
+
+    contentContainer.innerHTML = schedule
+      .map((dayData) => {
+        const indonesianDay = dayMapping[dayData.day] || dayData.day;
+        return `
+      <div data-day-content="${indonesianDay}" class="day-content ${indonesianDay === today ? "" : "hidden"}">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+          ${indonesianDay}
+          ${indonesianDay === today ? '<span class="px-2 py-0.5 bg-accent text-white text-xs rounded">Hari Ini</span>' : ""}
+        </h2>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          ${dayData.donghua_list
+            .map(
+              (item) => `
+            <a href="/detail/${item.slug}" class="group flex flex-col gap-2">
+              <div class="relative aspect-poster w-full overflow-hidden rounded-lg bg-highlight shadow-sm transition-transform duration-300 group-hover:scale-105">
+                <div class="absolute inset-0 skeleton"></div>
+                <img 
+                  src="${item.poster}" 
+                  alt="${item.title}" 
+                  class="relative h-full w-full object-cover opacity-0 transition-opacity duration-300" 
+                  loading="lazy" 
+                  decoding="async"
+                  onload="this.classList.remove('opacity-0'); this.classList.add('opacity-90');"
+                />
+                <div class="absolute top-2 left-2 flex gap-1">
+                  <span class="px-1.5 py-0.5 bg-accent text-[10px] font-bold text-white rounded">EP ${item.episode}</span>
+                </div>
+                ${
+                  item.release_time
+                    ? `
+                  <div class="absolute bottom-2 right-2">
+                    <span class="px-1.5 py-0.5 bg-black/70 text-[10px] text-white rounded backdrop-blur-sm">${item.release_time}</span>
+                  </div>
+                `
+                    : ""
+                }
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <h3 class="truncate text-sm font-medium text-primary group-hover:text-accent transition-colors">${item.title}</h3>
+              </div>
+            </a>
+          `,
+            )
+            .join("")}
+        </div>
+      </div>
+    `;
+      })
+      .join("");
+
+    contentSkeleton?.classList.add("hidden");
+    contentContainer.classList.remove("hidden");
+  }
+
+  function initTabListeners() {
+    const tabs = document.querySelectorAll(".day-tab");
+    const contents = document.querySelectorAll(".day-content");
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", (e) => {
         e.preventDefault();
-        const day = tab.getAttribute('data-day');
-        
-        // Update tabs
-        tabs.forEach(t => {
-          t.classList.remove('bg-accent', 'text-white');
-          t.classList.add('bg-surface', 'text-secondary', 'border', 'border-highlight');
+        const day = tab.getAttribute("data-day");
+
+        tabs.forEach((t) => {
+          t.classList.remove("bg-accent", "text-white");
+          t.classList.add(
+            "bg-surface",
+            "text-secondary",
+            "border",
+            "border-highlight",
+          );
         });
-        tab.classList.add('bg-accent', 'text-white');
-        tab.classList.remove('bg-surface', 'text-secondary', 'border', 'border-highlight');
-        
-        // Update content
-        contents.forEach(c => {
-          if (c.getAttribute('data-day-content') === day) {
-            c.classList.remove('hidden');
+        tab.classList.add("bg-accent", "text-white");
+        tab.classList.remove(
+          "bg-surface",
+          "text-secondary",
+          "border",
+          "border-highlight",
+        );
+
+        contents.forEach((c) => {
+          if (c.getAttribute("data-day-content") === day) {
+            c.classList.remove("hidden");
           } else {
-            c.classList.add('hidden');
+            c.classList.add("hidden");
           }
         });
       });
     });
   }
-  
-  // Run immediately
-  initScheduleTabs();
-  
-  // Also run on Astro page transitions
-  document.addEventListener('astro:page-load', initScheduleTabs);
+
+  loadSchedule();
+  document.addEventListener("astro:page-load", loadSchedule);
 </script>

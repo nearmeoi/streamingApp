@@ -1,27 +1,13 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
-import MediaCard from "../../components/media/MediaCard.astro";
-import { getHomeData } from "../../lib/api";
 
 const { page } = Astro.params;
 const currentPage = parseInt(page || "1");
-const apiData = await getHomeData(currentPage);
-const latestRelease = apiData?.latest_release || [];
-
-const items = latestRelease.map((item) => ({
-    title: item.title,
-    slug: item.slug,
-    poster: item.poster,
-    episode: item.current_episode || item.episode || "New",
-}));
-
-// Pagination Logic
-const hasNext = items.length > 0;
 const prevPage = currentPage > 1 ? currentPage - 1 : null;
-const nextPage = hasNext ? currentPage + 1 : null;
+const nextPage = currentPage + 1;
 ---
 
-<MainLayout title={`Catalog Page ${currentPage} - HuaStream`}>
+<MainLayout title={`Katalog Halaman ${currentPage} - HuaStream`}>
     <div class="container mx-auto px-4 py-8">
         <div class="flex items-center gap-4 mb-8">
             <a
@@ -41,25 +27,38 @@ const nextPage = hasNext ? currentPage + 1 : null;
                     ><path d="m15 18-6-6 6-6"></path></svg
                 >
             </a>
-            <h1 class="text-2xl font-bold">Latest Releases</h1>
+            <h1 class="text-2xl font-bold">Rilis Terbaru</h1>
         </div>
 
-        {
-            items.length > 0 ? (
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
-                    {items.map((media) => (
-                        <MediaCard media={media} episode={media.episode} />
-                    ))}
-                </div>
-            ) : (
-                <div class="text-center py-20">
-                    <h2 class="text-xl font-bold mb-2">No more items</h2>
-                    <a href="/catalog/1" class="text-accent hover:underline">
-                        Go back to start
-                    </a>
-                </div>
-            )
-        }
+        <!-- Skeleton Grid -->
+        <div
+            id="catalog-skeleton"
+            class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8"
+        >
+            {
+                Array.from({ length: 20 }).map(() => (
+                    <div class="flex flex-col gap-2">
+                        <div class="aspect-poster w-full skeleton rounded-lg" />
+                        <div class="skeleton w-3/4 h-4 rounded" />
+                    </div>
+                ))
+            }
+        </div>
+
+        <!-- Content Grid (hidden initially) -->
+        <div
+            id="catalog-content"
+            class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8"
+        >
+        </div>
+
+        <!-- No Items Message (hidden initially) -->
+        <div id="no-items" class="hidden text-center py-20">
+            <h2 class="text-xl font-bold mb-2">Tidak ada konten lagi</h2>
+            <a href="/catalog/1" class="text-accent hover:underline"
+                >Kembali ke awal</a
+            >
+        </div>
 
         <!-- Pagination Controls -->
         <div class="flex justify-center items-center gap-4 mt-6 pb-4">
@@ -69,14 +68,14 @@ const nextPage = hasNext ? currentPage + 1 : null;
                         href={`/catalog/${prevPage}`}
                         class="px-4 py-2 text-sm md:text-base bg-surface border border-highlight rounded-lg font-bold hover:bg-highlight transition-colors"
                     >
-                        Previous
+                        Sebelumnya
                     </a>
                 ) : (
                     <button
                         disabled
                         class="px-4 py-2 text-sm md:text-base bg-base border border-highlight rounded-lg font-bold opacity-50 cursor-not-allowed"
                     >
-                        Previous
+                        Sebelumnya
                     </button>
                 )
             }
@@ -84,26 +83,101 @@ const nextPage = hasNext ? currentPage + 1 : null;
             <span
                 class="px-4 py-2 text-sm md:text-base font-medium text-secondary flex items-center"
             >
-                Page {currentPage}
+                Halaman {currentPage}
             </span>
 
-            {
-                nextPage && items.length > 0 ? (
-                    <a
-                        href={`/catalog/${nextPage}`}
-                        class="px-4 py-2 text-sm md:text-base bg-accent text-white rounded-lg font-bold hover:bg-accent/80 transition-colors"
-                    >
-                        Next
-                    </a>
-                ) : (
-                    <button
-                        disabled
-                        class="px-4 py-2 text-sm md:text-base bg-base border border-highlight rounded-lg font-bold opacity-50 cursor-not-allowed"
-                    >
-                        Next
-                    </button>
-                )
-            }
+            <a
+                id="next-btn"
+                href={`/catalog/${nextPage}`}
+                class="px-4 py-2 text-sm md:text-base bg-accent text-white rounded-lg font-bold hover:bg-accent/80 transition-colors"
+            >
+                Selanjutnya
+            </a>
+            <button
+                id="next-btn-disabled"
+                class="hidden px-4 py-2 text-sm md:text-base bg-base border border-highlight rounded-lg font-bold opacity-50 cursor-not-allowed"
+            >
+                Selanjutnya
+            </button>
         </div>
     </div>
 </MainLayout>
+
+<script define:vars={{ currentPage }}>
+    async function loadCatalog() {
+        if (!window.location.pathname.startsWith("/catalog/")) return;
+        try {
+            const response = await fetch(`/api/catalog?page=${currentPage}`);
+            if (!response.ok) throw new Error("API error");
+
+            const data = await response.json();
+            const items = (data.latest_release || []).map((item) => ({
+                title: item.title,
+                slug: item.slug,
+                poster: item.poster,
+                episode: item.current_episode || item.episode || "Baru",
+            }));
+
+            renderCatalog(items);
+        } catch (error) {
+            console.error("[Catalog] Failed to load:", error);
+        }
+    }
+
+    function renderCatalog(items) {
+        const skeleton = document.getElementById("catalog-skeleton");
+        const content = document.getElementById("catalog-content");
+        const noItems = document.getElementById("no-items");
+        const nextBtn = document.getElementById("next-btn");
+        const nextBtnDisabled = document.getElementById("next-btn-disabled");
+
+        if (!content) return;
+
+        if (items.length === 0) {
+            skeleton?.classList.add("hidden");
+            noItems?.classList.remove("hidden");
+            nextBtn?.classList.add("hidden");
+            nextBtnDisabled?.classList.remove("hidden");
+            return;
+        }
+
+        content.innerHTML = items
+            .map((item) => {
+                const slug = item.slug.endsWith("/")
+                    ? item.slug.slice(0, -1)
+                    : item.slug;
+                return `
+        <a href="/watch/${slug}" class="group relative flex flex-col gap-2 w-full outline-none">
+          <div class="relative aspect-poster w-full overflow-hidden rounded-lg bg-highlight shadow-sm transition-transform duration-300 group-hover:scale-105">
+            <div class="absolute inset-0 skeleton"></div>
+            <img 
+              src="${item.poster}" 
+              alt="${item.title}" 
+              class="relative h-full w-full object-cover opacity-0 transition-opacity duration-300"
+              loading="lazy"
+              decoding="async"
+              onload="this.classList.remove('opacity-0'); this.classList.add('opacity-90');"
+            />
+            ${
+                item.episode
+                    ? `
+              <div class="absolute top-2 left-2">
+                <span class="px-1.5 py-0.5 bg-black/60 backdrop-blur-md text-[10px] font-bold text-white rounded">${item.episode}</span>
+              </div>
+            `
+                    : ""
+            }
+          </div>
+          <h3 class="truncate text-sm font-medium text-primary group-hover:text-accent transition-colors">${item.title}</h3>
+        </a>
+      `;
+            })
+            .join("");
+
+        skeleton?.classList.add("hidden");
+        content.classList.remove("hidden");
+    }
+
+    loadCatalog();
+    document.addEventListener("astro:page-load", loadCatalog);
+</script>

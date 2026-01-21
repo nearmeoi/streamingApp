@@ -22,6 +22,9 @@ const { featured } = Astro.props;
             src={item.poster}
             alt={item.title}
             class="w-full h-full object-cover"
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
           />
           <div class="absolute inset-0 bg-gradient-to-t from-base via-base/50 to-transparent" />
           <div class="absolute inset-0 bg-gradient-to-r from-base via-transparent to-transparent opacity-80" />

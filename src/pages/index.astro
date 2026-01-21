@@ -1,221 +1,46 @@
 ---
 import MainLayout from "../layouts/MainLayout.astro";
-import HeroSlider from "../components/media/HeroSlider.astro";
-import MediaCard from "../components/media/MediaCard.astro";
-import { getHomeData } from "../lib/api";
-import { TRENDING_MEDIA, MOCK_MEDIA } from "../data/placeholder";
-
-const apiData = await getHomeData();
-
-// New API mainly returns 'latest_release'
-// We will use latest_release to populate fallback slider and popular sections for now
-const latestRelease = apiData?.latest_release || [];
-
-// Map placeholder data to API structure for fallback/demo
-const fallbackSlider = TRENDING_MEDIA.map((m) => ({
-  title: m.title,
-  slug: m.id,
-  poster: m.backdrop,
-  episode: "New",
-}));
-// Map new API items to old structure expected by components
-const mappedLatest = latestRelease.map((item) => ({
-  title: item.title,
-  slug: item.slug, // item.slug might contain '/donghua/episode/...' or just slug, we need to be careful.
-  // Based on JSON: "slug": "swallowed-star-episode-207-subtitle-indonesia/"
-  // We might need to extract the series slug if we want to go to detail,
-  // BUT for "Latest Release" usually we want to go fairly directly to watch or detail.
-  // The API provides 'anichinUrl' and 'href'.
-  // Let's use the slug provided.
-  poster: item.poster,
-  episode: item.current_episode || "New",
-}));
-
-const sliderData =
-  mappedLatest.length > 0 ? mappedLatest.slice(0, 5) : fallbackSlider;
-
-// Layout Logic:
-// We use a large cinematic background for desktop (e.g. the first item's poster blurred)
-const backdropImage = sliderData[0]?.poster || "";
-// Fallback placeholder needs poster mapping too if used in MediaCard
-const popularToday =
-  mappedLatest.length > 0
-    ? mappedLatest.slice(0, 10)
-    : MOCK_MEDIA.slice(0, 10).map((m) => ({
-        title: m.title,
-        slug: m.id,
-        poster: m.poster,
-        episode: "12 Eps",
-      }));
-const displayLatest =
-  mappedLatest.length > 0
-    ? mappedLatest
-    : MOCK_MEDIA.slice(0, 10).map((m) => ({
-        title: m.title,
-        slug: m.id,
-        poster: m.poster,
-        episode: "12 Eps",
-      }));
 ---
 
-<MainLayout title="HuaStream - Home">
-  <!-- Desktop Ambient Background -->
-  <div class="fixed inset-0 z-[-1] hidden md:block">
-    <div class="absolute inset-0 bg-base/90 z-10"></div>
-    <img
-      src={backdropImage}
-      class="w-full h-full object-cover blur-[100px] opacity-40 scale-110"
-      alt=""
-    />
+<MainLayout title="HuaStream - Beranda">
+  <!-- Hero Skeleton -->
+  <div
+    id="hero-skeleton"
+    class="relative w-full aspect-[4/5] md:aspect-[21/9] overflow-hidden bg-surface"
+  >
+    <div class="absolute inset-0 skeleton"></div>
     <div
-      class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-base to-transparent z-20"
+      class="absolute bottom-0 left-0 p-4 md:p-12 w-full md:w-2/3 flex flex-col gap-3"
     >
-    </div>
-    <div
-      class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-base to-transparent z-20"
-    >
+      <div class="skeleton w-20 h-6 rounded"></div>
+      <div class="skeleton w-3/4 h-10 md:h-16 rounded"></div>
+      <div class="skeleton w-full h-4 rounded mt-2"></div>
+      <div class="skeleton w-2/3 h-4 rounded"></div>
+      <div class="flex gap-3 mt-2">
+        <div class="skeleton w-32 h-12 rounded-lg"></div>
+        <div class="skeleton w-32 h-12 rounded-lg"></div>
+      </div>
     </div>
   </div>
 
-  <div class="md:relative md:z-10">
-    <HeroSlider featured={sliderData} />
+  <!-- Hero Content (hidden initially) -->
+  <div id="hero-content" class="hidden"></div>
 
+  <div class="md:relative md:z-10">
     <div
       class="container mx-auto px-4 py-8 flex flex-col gap-16 md:-mt-20 relative z-20"
     >
-      <!-- Apps/Categories Bar (Desktop Mockup Style) -->
-      <div
-        class="hidden md:flex items-center justify-center gap-6 glass p-4 rounded-2xl mx-auto mb-8 max-w-4xl backdrop-blur-md"
-      >
-        <button
-          class="flex flex-col items-center gap-2 text-primary hover:text-accent transition-colors group"
-        >
-          <div
-            class="w-12 h-12 rounded-xl bg-surface flex items-center justify-center group-hover:bg-highlight transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              ><rect width="20" height="15" x="2" y="7" rx="2" ry="2"
-              ></rect><polyline points="17 2 12 7 7 2"></polyline></svg
-            >
-          </div>
-          <span class="text-xs font-medium">TV Series</span>
-        </button>
-        <button
-          class="flex flex-col items-center gap-2 text-primary hover:text-accent transition-colors group"
-        >
-          <div
-            class="w-12 h-12 rounded-xl bg-surface flex items-center justify-center group-hover:bg-highlight transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              ><path
-                d="M19.82 2H4.18C2.97 2 2 2.97 2 4.18v15.64c0 1.21.97 2.18 2.18 2.18h15.64c1.21 0 2.18-.97 2.18-2.18V4.18C22 2.97 21.03 2 19.82 2Z"
-              ></path><path d="M7 2v20"></path><path d="M17 2v20"></path><path
-                d="M2 12h20"></path><path d="M2 7h5"></path><path d="M2 17h5"
-              ></path><path d="M17 17h5"></path><path d="M17 7h5"></path></svg
-            >
-          </div>
-          <span class="text-xs font-medium">Movies</span>
-        </button>
-        <button
-          class="flex flex-col items-center gap-2 text-primary hover:text-accent transition-colors group"
-        >
-          <div
-            class="w-12 h-12 rounded-xl bg-surface flex items-center justify-center group-hover:bg-highlight transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              ><path d="M4 11a9 9 0 0 1 9 9"></path><path
-                d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"
-              ></circle></svg
-            >
-          </div>
-          <span class="text-xs font-medium">Trending</span>
-        </button>
-        <a
-          href="/catalog/1"
-          class="flex flex-col items-center gap-2 text-primary hover:text-accent transition-colors group"
-        >
-          <div
-            class="w-12 h-12 rounded-xl bg-surface flex items-center justify-center group-hover:bg-highlight transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              ><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"
-              ></path><path d="M12 8h.01"></path></svg
-            >
-          </div>
-          <span class="text-xs font-medium">Catalog</span>
-        </a>
-        <a
-          href="/mylist"
-          class="flex flex-col items-center gap-2 text-primary hover:text-accent transition-colors group"
-        >
-          <div
-            class="w-12 h-12 rounded-xl bg-surface flex items-center justify-center group-hover:bg-highlight transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              ><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
-              ></path></svg
-            >
-          </div>
-          <span class="text-xs font-medium">My List</span>
-        </a>
-      </div>
-
-      {/* Popular Today (Mapped from Latest for now) */}
+      <!-- Popular Updates Section -->
       <section class="md:glass md:p-8 md:rounded-3xl">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-xl font-bold border-l-4 border-accent pl-3">
-            Popular Updates
+            Pembaruan Populer
           </h2>
           <a
             href="/catalog/1"
             class="text-accent text-sm font-medium hover:underline flex items-center gap-1"
           >
-            See All
+            Lihat Semua
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="16"
@@ -229,30 +54,41 @@ const displayLatest =
             >
           </a>
         </div>
+
+        <!-- Skeleton Grid -->
         <div
+          id="popular-skeleton"
           class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
         >
           {
-            popularToday.map((media) => (
-              <MediaCard media={media} episode={media.episode} />
+            Array.from({ length: 10 }).map(() => (
+              <div class="flex flex-col gap-2">
+                <div class="aspect-poster w-full skeleton rounded-lg" />
+                <div class="skeleton w-3/4 h-4 rounded" />
+              </div>
             ))
           }
+        </div>
+
+        <!-- Real Content (hidden initially) -->
+        <div
+          id="popular-content"
+          class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
+        >
         </div>
       </section>
 
-      {/* Short Clips (Disabled for now as API doesn't have it) */}
-
-      {/* Latest Release */}
+      <!-- Latest Release Section -->
       <section class="md:glass md:p-8 md:rounded-3xl">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-xl font-bold border-l-4 border-accent pl-3">
-            Latest Release
+            Rilis Terbaru
           </h2>
           <a
             href="/catalog/1"
             class="text-accent text-sm font-medium hover:underline flex items-center gap-1"
           >
-            See All
+            Lihat Semua
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="16"
@@ -266,16 +102,134 @@ const displayLatest =
             >
           </a>
         </div>
+
+        <!-- Skeleton Grid -->
         <div
+          id="latest-skeleton"
           class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
         >
           {
-            displayLatest.map((media) => (
-              <MediaCard media={media} episode={media.episode} />
+            Array.from({ length: 10 }).map(() => (
+              <div class="flex flex-col gap-2">
+                <div class="aspect-poster w-full skeleton rounded-lg" />
+                <div class="skeleton w-3/4 h-4 rounded" />
+              </div>
             ))
           }
+        </div>
+
+        <!-- Real Content (hidden initially) -->
+        <div
+          id="latest-content"
+          class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
+        >
         </div>
       </section>
     </div>
   </div>
 </MainLayout>
+
+<script>
+  // Client-side data fetching for zero loading
+  async function loadHomeData() {
+    if (window.location.pathname !== "/") return;
+    try {
+      const response = await fetch("/api/home");
+      if (!response.ok) throw new Error("API error");
+
+      const data = await response.json();
+      const items = data.latest_release || [];
+
+      // Render hero
+      renderHero(items.slice(0, 1)[0]);
+
+      // Render popular (first 10)
+      renderMediaGrid("popular", items.slice(0, 10));
+
+      // Render latest (all)
+      renderMediaGrid("latest", items);
+    } catch (error) {
+      console.error("[Home] Failed to load data:", error);
+    }
+  }
+
+  function renderHero(item: any) {
+    if (!item) return;
+
+    const heroSkeleton = document.getElementById("hero-skeleton");
+    const heroContent = document.getElementById("hero-content");
+
+    if (!heroContent) return;
+
+    const slug = item.slug.endsWith("/") ? item.slug.slice(0, -1) : item.slug;
+
+    heroContent.innerHTML = `
+      <div class="relative w-full aspect-[4/5] md:aspect-[21/9] overflow-hidden">
+        <img src="${item.poster}" alt="${item.title}" class="w-full h-full object-cover" loading="eager" />
+        <div class="absolute inset-0 bg-gradient-to-t from-base via-base/50 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-base via-transparent to-transparent opacity-80"></div>
+        <div class="absolute bottom-0 left-0 p-4 md:p-12 w-full md:w-2/3 flex flex-col gap-3 items-start">
+          <span class="px-2 py-1 bg-accent text-[10px] font-bold rounded uppercase tracking-wider text-white">Sedang Tren</span>
+          <h1 class="text-2xl md:text-6xl font-bold leading-tight line-clamp-2">${item.title}</h1>
+          <p class="text-secondary text-sm md:text-base line-clamp-2 md:line-clamp-3 max-w-xl">
+            Tonton ${item.current_episode || "episode terbaru"} dari ${item.title} sekarang di HuaStream.
+          </p>
+          <div class="flex gap-3 mt-2">
+            <a href="/watch/${slug}" class="inline-flex items-center justify-center rounded-lg font-medium bg-accent text-white hover:bg-red-700 px-4 py-2 text-sm md:px-8 md:py-4 md:text-lg transition-colors">Tonton Sekarang</a>
+            <button class="inline-flex items-center justify-center rounded-lg font-medium bg-highlight text-primary hover:bg-gray-700 px-4 py-2 text-sm md:px-8 md:py-4 md:text-lg transition-colors">+ Daftar Saya</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    heroSkeleton?.classList.add("hidden");
+    heroContent.classList.remove("hidden");
+  }
+
+  function renderMediaGrid(section: string, items: any[]) {
+    const skeleton = document.getElementById(`${section}-skeleton`);
+    const content = document.getElementById(`${section}-content`);
+
+    if (!content) return;
+
+    content.innerHTML = items
+      .map((item) => {
+        const slug = item.slug.endsWith("/")
+          ? item.slug.slice(0, -1)
+          : item.slug;
+        return `
+        <a href="/watch/${slug}" class="group relative flex flex-col gap-2 w-full outline-none">
+          <div class="relative aspect-poster w-full overflow-hidden rounded-lg bg-highlight shadow-sm transition-transform duration-300 group-hover:scale-105">
+            <div class="absolute inset-0 skeleton"></div>
+            <img 
+              src="${item.poster}" 
+              alt="${item.title}" 
+              class="relative h-full w-full object-cover opacity-0 transition-opacity duration-300"
+              loading="lazy"
+              decoding="async"
+              onload="this.classList.remove('opacity-0'); this.classList.add('opacity-90');"
+            />
+            ${
+              item.current_episode
+                ? `
+              <div class="absolute top-2 left-2">
+                <span class="px-1.5 py-0.5 bg-black/60 backdrop-blur-md text-[10px] font-bold text-white rounded">${item.current_episode}</span>
+              </div>
+            `
+                : ""
+            }
+          </div>
+          <h3 class="truncate text-sm font-medium text-primary group-hover:text-accent transition-colors">${item.title}</h3>
+        </a>
+      `;
+      })
+      .join("");
+
+    skeleton?.classList.add("hidden");
+    content.classList.remove("hidden");
+  }
+
+  // Load data on page load and View Transitions
+  loadHomeData();
+  document.addEventListener("astro:page-load", loadHomeData);
+</script>
