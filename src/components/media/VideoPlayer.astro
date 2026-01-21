@@ -18,6 +18,22 @@ let isIframe = true; // Assume iframe for most streaming servers from this API
 if (src.endsWith(".m3u8") || src.endsWith(".mp4")) {
   isIframe = false;
 }
+
+// --- BYPASS: Detect Anichin Embed and use direct HLS ---
+// Supports: ?id=xxx, /v/xxx, /z/xxx
+if (src.includes("anichinv2.icu") || src.includes("anichin.club")) {
+  try {
+    const idMatch = src.match(/(?:id=|\/v\/|\/z\/)([a-zA-Z0-9]+)/);
+    const id = idMatch ? idMatch[1] : null;
+
+    if (id) {
+      finalSrc = `https://anichin.club/z/${id}.m3u8`;
+      isIframe = false; // Use native player
+    }
+  } catch (e) {
+    // Keep as iframe if parsing fails
+  }
+}
 ---
 
 <div
@@ -30,7 +46,9 @@ if (src.endsWith(".m3u8") || src.endsWith(".mp4")) {
       <iframe
         src={finalSrc}
         class="w-full h-full border-none"
-        allow="autoplay; fullscreen; picture-in-picture"
+        allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
+        sandbox="allow-forms allow-scripts allow-same-origin allow-presentation allow-orientation-lock"
+        referrerpolicy="no-referrer"
         allowfullscreen
       />
     ) : (
