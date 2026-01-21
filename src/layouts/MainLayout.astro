@@ -39,7 +39,15 @@ const isNoPaddingPage =
       rel="stylesheet"
     />
     <ViewTransitions />
+    <link rel="manifest" href="/manifest.json" />
     <title>{title}</title>
+    <script is:inline>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js");
+        });
+      }
+    </script>
   </head>
   <body
     class={`bg-base text-primary antialiased ${isNoPaddingPage ? "" : "pb-20 md:pb-0"} selection:bg-accent selection:text-white font-roboto flex flex-col min-h-screen`}

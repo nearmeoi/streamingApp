@@ -49,24 +49,43 @@ body {
   scrollbar-width: none;
 }
 
-/* Glassmorphism */
+/* Glassmorphism - Optimized for Performance */
 .glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(20, 20, 20, 0.95);
+  /* Fallback solid for mobile */
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-strong {
-  background: rgba(15, 15, 15, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(10, 10, 10, 0.98);
+  /* Fallback solid for mobile */
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Cinematic Glow */
+/* Enable blur only on medium screens and up (>768px) AND when device supports it efficiently */
+@media (min-width: 768px) {
+  .glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .glass-strong {
+    background: rgba(15, 15, 15, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+}
+
+/* Cinematic Glow - Reduced radius for mobile performance */
 .glow-purple {
-  box-shadow: 0 0 100px 20px rgba(109, 40, 217, 0.15);
+  box-shadow: 0 0 40px 10px rgba(109, 40, 217, 0.1);
+}
+
+@media (min-width: 768px) {
+  .glow-purple {
+    box-shadow: 0 0 100px 20px rgba(109, 40, 217, 0.15);
+  }
 }
 
 /* ========== PERFORMANCE OPTIMIZATIONS ========== */
@@ -90,31 +109,39 @@ button:active,
 }
 
 /* Skeleton Loading Animation */
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
+/* Optimized Skeleton - Uses opacity pulse instead of heavy background gradient movement */
+@keyframes pulse-skeleton {
+
+  0%,
+  100% {
+    opacity: 1;
   }
 
-  100% {
-    background-position: 200% 0;
+  50% {
+    opacity: 0.5;
   }
 }
 
 .skeleton {
-  background: linear-gradient(90deg,
-      var(--color-bg-highlight) 25%,
-      var(--color-bg-surface) 50%,
-      var(--color-bg-highlight) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 2.5s ease-in-out infinite;
+  background-color: var(--color-bg-highlight);
   border-radius: 0.5rem;
+  animation: pulse-skeleton 1.5s ease-in-out infinite;
+  /* Removed expensive gradient background-position animation */
 }
 
 /* Image fade-in on load */
+
+/* More performant image fade-in */
 img {
+  image-rendering: auto;
+  /* Ensure browser optimizes resampling */
   opacity: 1;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity 0.3s ease-out;
+  /* Slightly faster, ease-out is better for immediate feel */
+  will-change: opacity;
+  /* Hint browser to promote to layer */
 }
+
 
 img[data-loading="true"] {
   opacity: 0;
