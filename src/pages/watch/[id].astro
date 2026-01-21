@@ -293,10 +293,20 @@ const fallbackStream = "https://files.vidstack.io/agent-327/hls/stream.m3u8";
         if (!container) return;
 
         // Check if it's an iframe source or HLS
-        const isIframe =
+        let isIframe =
             src.includes("embed") ||
             src.includes("player") ||
             (!src.includes(".m3u8") && !src.includes(".mp4"));
+
+        // --- BYPASS: Detect Anichin Embed and use direct HLS ---
+        if (src.includes("anichinv2.icu") || src.includes("anichin.club")) {
+            const idMatch = src.match(/(?:id=|\/v\/|\/z\/)([a-zA-Z0-9]+)/);
+            const id = idMatch ? idMatch[1] : null;
+            if (id) {
+                src = `https://anichin.club/z/${id}.m3u8`;
+                isIframe = false; // Use native player
+            }
+        }
 
         if (isIframe) {
             container.innerHTML = `
@@ -305,7 +315,9 @@ const fallbackStream = "https://files.vidstack.io/agent-327/hls/stream.m3u8";
             src="${src}" 
             class="absolute inset-0 w-full h-full" 
             allowfullscreen 
-            allow="autoplay; fullscreen; picture-in-picture"
+            allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
+            sandbox="allow-forms allow-scripts allow-same-origin allow-presentation allow-orientation-lock"
+            referrerpolicy="no-referrer"
             frameborder="0"
           ></iframe>
         </div>

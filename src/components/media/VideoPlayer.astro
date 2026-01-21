@@ -12,6 +12,7 @@ const { poster, src = "", episodes = [] } = Astro.props;
 // --- Helper: Process the source ---
 // New API returns direct URL, mostly iframe like https://anichin.stream/....
 // We just need to check if it's an iframe embed or a video link.
+console.log("DEBUG: VideoPlayer src =", src); // DEBUG LOG
 let finalSrc = src;
 let isIframe = true; // Assume iframe for most streaming servers from this API
 
